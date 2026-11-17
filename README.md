@@ -1,2 +1,2 @@
 # potlerh
-sei la crl
+web page for generating wiremesh obj files
