@@ -1,5 +1,4 @@
 [
-    
     {
         "name": ":clear",
         "ex": "ctext = '';\nvertices = [];\nedges = [];"
