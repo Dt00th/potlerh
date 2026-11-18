@@ -1,7 +1,3 @@
-<<<<<<< HEAD
-=======
-const input = document.getElementById("userinput");
->>>>>>> f8b8a4acc15d0a2cdc27de224f6f908917ddabb2
 const scaleelement = document.getElementById("scale");
 const output = document.getElementById("output");
 const canvas = document.getElementById("canvas");
@@ -10,23 +6,14 @@ const width = 500, height = 500;
 var x = null,y = null,z = null;
 var vertices = [];
 var edges = [];
-<<<<<<< HEAD
 var scale = canvas.height/10;
 var ctext = "";
 var textout = "";
 var commands = [];
-=======
-var scale = 50;
-
-// Cube
-//var vertices=[[-1,-1,-1], [1,-1,-1], [1,1,-1], [-1,1,-1],[-1,-1,1],[1,-1,1],[1,1,1],[-1,1,1]];
-//var edges=[[0,1],[1,2],[2,3],[3,0],[4,5],[5,6],[6,7],[7,4],[0,4],[1,5],[2,6],[3,7]];
->>>>>>> f8b8a4acc15d0a2cdc27de224f6f908917ddabb2
 
 const writebutton = document.getElementById("writebutton");
 const textinput = document.getElementById("textinput");
 
-<<<<<<< HEAD
 // Settings
 var whe = 0;
 let intmode = "add";
@@ -60,9 +47,6 @@ textinput.addEventListener("keydown", function (event) {
     }
 })
 
-=======
-const FOV = 60;
->>>>>>> f8b8a4acc15d0a2cdc27de224f6f908917ddabb2
 function project(point) {
     const distance = 5;
     const zOffset = point[2] + distance;
@@ -89,7 +73,6 @@ function rotate(p, anglex, angley) {
     return rotated;
 }
 
-<<<<<<< HEAD
 setupcom();
 function setupcom() {
     try {
@@ -163,59 +146,6 @@ function outputrend() {
     } else if (whe==1) {
         output.textContent = x+", "+y;
     } else if (whe==2) {
-=======
-input.addEventListener("keydown", function (event) {
-    if(event.key=="Enter") {
-        const text = input.value;
-        input.value = "";
-        stream(text);
-    }
-})
-
-textinput.addEventListener("keydown", function (event) {
-    if(event.key=="Enter") {
-        const text = textinput.value;
-        textinput.value = "";
-        read(text);
-    }
-})
-
-var n = 0;
-function stream(num) {
-    if(n==0) {
-        x = num;
-        n = 1;
-        //output.value = x;
-        render();
-    } else if (n==1) {
-        y = num;
-        n = 2;
-        //output.value = x+", "+y;
-        render();
-    } else if(n==2) {
-        z = num;
-        n = 0;
-        submit([x, y, z]);
-    }
-}
-function submit(point) {
-    if(vertices[0]==null) {
-        vertices[0] = point;
-    } else {
-        console.log(vertices[0]);
-        vertices[vertices.length] = point;
-    }
-    x = null; y = null, z = null;
-    render();
-}
-
-function outputrend() {
-    if(n==0) {
-        output.textContent = x;
-    } else if (n==1) {
-        output.textContent = x+", "+y;
-    } else if (n==2) {
->>>>>>> f8b8a4acc15d0a2cdc27de224f6f908917ddabb2
         output.textContent = x+", "+y+", "+z;
     }
 }
@@ -237,11 +167,7 @@ function download() {
         text += "\nl " + edges[i][0] + " " + edges[i][1]+" ";
     }
     element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
-<<<<<<< HEAD
     element.setAttribute('download', "objectname.obj");
-=======
-    element.setAttribute('download', "cube.obj");
->>>>>>> f8b8a4acc15d0a2cdc27de224f6f908917ddabb2
 
     element.style.display = 'none';
     document.body.appendChild(element);
@@ -251,10 +177,6 @@ function download() {
     document.body.removeChild(element);
 }
 
-<<<<<<< HEAD
-=======
-//read("ola eu sou gay");
->>>>>>> f8b8a4acc15d0a2cdc27de224f6f908917ddabb2
 function read(text) {
     let mode = null;
     let j = -1;
@@ -299,7 +221,6 @@ function read(text) {
     }
 }
 
-<<<<<<< HEAD
 function readfile(path) {
     try {
         fetch(path).then((res) => res.text()).then((text) => {
@@ -312,9 +233,6 @@ function readfile(path) {
     }
 }
 
-=======
-let xangle = 0; yangle = 0;
->>>>>>> f8b8a4acc15d0a2cdc27de224f6f908917ddabb2
 function render() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     outputrend();
@@ -348,7 +266,6 @@ function render() {
             }
         }
     }
-<<<<<<< HEAD
 
     // render text
     ctx.fillstyle="black";
@@ -366,18 +283,12 @@ function render() {
         ctx.font = "48px serif";
         ctx.fillText(ctext, canvas.width/2 - ctx.measureText(ctext).width/2, canvas.height/2);
     }
-=======
->>>>>>> f8b8a4acc15d0a2cdc27de224f6f908917ddabb2
     //ctx.moveTo(30, 50);
     //ctx.lineTo(150, 100);
     ctx.stroke();
 }
 
 let lastTime = 0;
-<<<<<<< HEAD
-=======
-
->>>>>>> f8b8a4acc15d0a2cdc27de224f6f908917ddabb2
 function mainloop(currentTime) {
     const deltaTime = (currentTime - lastTime) / 1000;
     lastTime = currentTime;
@@ -388,16 +299,9 @@ function mainloop(currentTime) {
     requestAnimationFrame(mainloop);
 }
 
-<<<<<<< HEAD
 function update(deltaTime) {
     xangle += xanglespeed*deltaTime;
     yangle += yanglespeed*deltaTime;
-=======
-const sti = 2.3;
-function update(deltaTime) {
-    //xangle += sti*1*deltaTime;
-    yangle += sti*.9*deltaTime;
->>>>>>> f8b8a4acc15d0a2cdc27de224f6f908917ddabb2
     //xangle = 3*Math.PI/6;
     //yangle = Math.PI/6;
 }
@@ -405,8 +309,4 @@ function update(deltaTime) {
 requestAnimationFrame((timestamp) => {
     lastTime = timestamp;
     requestAnimationFrame(mainloop);
-<<<<<<< HEAD
 });
-=======
-});
->>>>>>> f8b8a4acc15d0a2cdc27de224f6f908917ddabb2
