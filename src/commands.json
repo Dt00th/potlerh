@@ -1,0 +1,23 @@
+[
+    
+    {
+        "name": ":clear",
+        "ex": "ctext = '';\nvertices = [];\nedges = [];"
+    },
+    {
+        "name": "alert",
+        "ex": "alert('alert')"
+    },
+    {
+        "name": ":cube",
+        "ex": "ctext = '';\nreadfile('../assets/cube.obj');"
+    },
+    {
+        "name": ":rot",
+        "ex": "xanglespeed = rotationspeed;\nyanglespeed = rotationspeed*.9;\nctext = '';"
+    },
+    {
+        "name": ":srot",
+        "ex": "xanglespeed = 0;\nyanglespeed = 0;\nctext='';"
+    }
+]
