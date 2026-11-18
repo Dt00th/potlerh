@@ -13,10 +13,14 @@
     },
     {
         "name": ":rot",
-        "ex": "xanglespeed = rotationspeed;\nyanglespeed = rotationspeed*.9;\nctext = '';"
+        "ex": "xanglev = rotationspeed;\nyanglev = rotationspeed*.9;\nctext = '';"
     },
     {
         "name": ":srot",
-        "ex": "xanglespeed = 0;\nyanglespeed = 0;\nctext='';"
+        "ex": "xanglev = 0;\nyanglev = 0;\nctext='';"
+    },
+    {
+        "name": ":initrot",
+        "ex": "ctext='';xangle=0;yangle=0"
     }
 ]
