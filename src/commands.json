@@ -9,7 +9,7 @@
     },
     {
         "name": ":cube",
-        "ex": "ctext = '';\nreadfile('../assets/cube.obj');"
+        "ex": "ctext = '';readfile('../assets/cube.obj');"
     },
     {
         "name": ":rot",
@@ -22,5 +22,30 @@
     {
         "name": ":initrot",
         "ex": "ctext='';xangle=0;yangle=0"
+    },
+    {
+        "name": "set xangle",
+        "cond": "ctext.slice(0, 7)=='xangle='",
+        "ex": "xangle=ctext.slice(7)/180*Math.PI;ctext=''"
+    },
+    {
+        "name": "set yangle",
+        "cond": "ctext.slice(0, 7)=='yangle='",
+        "ex": "yangle=ctext.slice(7)/180*Math.PI;ctext=''"
+    },
+    {
+        "name": "+= xangle",
+        "cond": "ctext.slice(0, 8)=='xangle+='",
+        "ex": "xangle+=ctext.slice(8)/180*Math.PI;ctext=''"
+    },
+    {
+        "name": "+= yangle",
+        "cond": "ctext.slice(0, 8)=='yangle+='",
+        "ex": "yangle+=ctext.slice(8)/180*Math.PI;ctext=''"
+    },
+    {
+        "name": "open file",
+        "cond": "ctext.slice(0,2)=='./'",
+        "ex": "readfile('../assets/'+ctext.slice(2));ctext=''"
     }
 ]

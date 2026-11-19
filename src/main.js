@@ -11,12 +11,14 @@ var scale = canvas.height/10;
 var ctext = "";
 var textout = "";
 var commands = [];
+var commandhist = [];
+var histpos = 0;
 
 const writebutton = document.getElementById("writebutton");
 const textinput = document.getElementById("textinput");
 
 // Settings
-let intmode = "movev";
+let intmode = "";
 let xangle = 0; let yangle = 0;
 let xanglev = 0; let yanglev = 0;
 let rotationspeed = .5;
@@ -53,12 +55,32 @@ canvas.addEventListener("mousestop", ()=> {
 canvas.addEventListener("keydown", (event) => {
     if(event.key=="Enter") {
         if(intmode!="add") {
-            submit();
+            let a = submit();
+            if(commandhist[commandhist.length-1]!=ctext) {
+                commandhist.push(ctext);
+                histpos = 0;
+            }
         }
     } else if(event.key=="Backspace") {
         ctext= ctext.slice(0, -1);
     } else if(event.key=="Escape") {
         ctext="";
+    } else if(event.key=="ArrowUp") {
+        if(commandhist.length>1) {
+            if(histpos<commandhist.length) {
+                histpos++;
+            }
+            ctext = commandhist[commandhist.length-histpos];
+        }
+    } else if(event.key=="ArrowDown") {
+        if(histpos>0) {
+            histpos--;
+        }
+        if(histpos==0) {
+            ctext = "";
+        } else {
+            ctext = commandhist[commandhist.length-histpos];
+        }
     } else if(event.key.length==1) {
         ctext+=event.key;
     }
@@ -117,20 +139,24 @@ function submit() {
         if(ctext==":add") {
             intmode = "add";
             ctext = "";
+            return "add";
         }
         if(ctext==":normal") {
             intmode = "";
             ctext = "";
+            return "normal";
         }
         if(ctext==":movev") {
             intmode = "movev";
             ctext = "";
+            return "movev";
         }
     }
     if(ctext[0]=="?") {
         if(ctext.slice(0,5)=="?vert") {
             textout = vertices[ctext.slice(5)];
             ctext="";
+            return "?vert";
         }
     }
     
@@ -138,33 +164,48 @@ function submit() {
         genmatmesh(ctext);
     }
     for(let i = 0; i < commands.length; i++) {
-        if(ctext==commands[i].name) {
-            var F = new Function(commands[i].ex);
-            return(F());
+        var F;
+        let expr = commands[i].cond;
+        let cond = new Function(`return Boolean(${expr});`);
+        if(commands[i].cond) {
+            if(cond()) {
+                F = new Function(commands[i].ex);
+                F();
+                return(commands[i].name);
+            }
+        } else if(ctext==commands[i].name) {
+            F = new Function(commands[i].ex);
+            F();
+            return(commands[i].name);
         }
     }
+    //return null;
+    // lazy
+    //var F = new Function(ctext);
+    //ctext = "";
+    //return(F());
 }
 
-function genmatmesh(func) {
-    let n = null;
-    let res = .2;
-    let amp = 1000;
-    let limit1 = -amp/2;
-    let limit2 = amp/2;
-    for(let i = 0; i < func.length; i++) {
-        if(func[i]=="x") {
-            n = i;
-            break;
-        }
-    }
-    let coeff = ctext.slice(2, n);
-    for(let i = 0; i < amp/res;i++) {
-        let x1 = limit1 + res*i;
-        vertices[i] = [x1, i, 0];
-    }
-    alert();
-    ctext="";
-}
+//function genmatmesh(func) {
+//    let n = null;
+//    let res = .2;
+//    let amp = 1000;
+//    let limit1 = -amp/2;
+//    let limit2 = amp/2;
+//    for(let i = 0; i < func.length; i++) {
+//        if(func[i]=="x") {
+//            n = i;
+//            break;
+//        }
+//    }
+//    let coeff = ctext.slice(2, n);
+//    for(let i = 0; i < amp/res;i++) {
+//        let x1 = limit1 + res*i;
+//        vertices[i] = [x1, i, 0];
+//    }
+//    alert();
+//    ctext="";
+//}
 
 function download() {
     var text="";
@@ -198,8 +239,8 @@ function read(text) {
     let j = -1;
     let k = 0;
     let value = "";
-    vertices = [];
-    edges = [];
+    vertices = structuredClone([]);
+    edges = structuredClone([]);
     for(let i = 0; i < text.length; i++) {
         if(text[i]=="v") {
             mode = "v";
@@ -262,6 +303,7 @@ function render() {
             ctx.fillRect(scale*vertices[0][0], scale*vertices[0][1], 3, 3);
         } else {
             // Project
+            projp = structuredClone([]);
             for(let i = 0; i < vertices.length; i++) {
                 const rotated = rotate(vertices[i], xangle, yangle);
                 projp[i] = project(rotated);
@@ -373,8 +415,28 @@ function movepoint(index) {
     let xrf = xvr*FOV*zoffset/projscale;
     let yrf = yvr*FOV*zoffset/projscale;
     let zrf = pr.z;
+
+    //simplif
+    xrf = xvr*xr/xv;
+    yrf = yvr*xr/xv;
     let pgf = rotate([xrf, yrf, zrf], -xangle, -yangle);
     vertices[index] = structuredClone(pgf);
+}
+
+//createsphere();
+function createsphere() {
+    let res = 1000;
+    let r = 1;
+    let rot = 30.1;
+    for(let i = 0; i < res; i++) {
+        let x, y, z;
+        z = i/res -r/2; //Math.cos(i/res*Math.PI)*
+        x =r/2*Math.sin(i/res*Math.PI)*Math.cos(i/res*Math.PI*rot); y = r/2*Math.sin(i/res*Math.PI)*Math.sin(i/res*Math.PI*rot);
+        vertices[i] = [x, y, z];
+        if(i+1!=res) {
+            edges[i]= [i, i+1];
+        }
+    }
 }
 
 requestAnimationFrame((timestamp) => {
