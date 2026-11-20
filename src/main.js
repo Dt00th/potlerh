@@ -32,7 +32,7 @@ const projscale = 600;
 // init
 function init() {
     canvas.focus();
-    readfile("/assets/cube.obj");
+    readfile("./assets/cube.obj");
     projd = 5;
     xangle = 0;yangle = 0;
     xanglev = 0; yanglev = 0;
