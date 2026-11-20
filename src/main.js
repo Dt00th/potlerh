@@ -27,7 +27,7 @@ let FOV = 60;
 var drawv = 1;
 
 canvas.focus();
-readfile("../assets/cube.obj");
+readfile("/assets/cube.obj");
 
 let moused = 0;
 let mousebutton = 0;
@@ -129,7 +129,7 @@ function rotate(p, anglex, angley) {
 setupcom();
 function setupcom() {
     try {
-        fetch("commands.json").then((res) => res.text()).then((text) => {
+        fetch("src/commands.json").then((res) => res.text()).then((text) => {
             commands = JSON.parse(text);
         }).catch((e) => console.error(e));
     } catch(error) {
