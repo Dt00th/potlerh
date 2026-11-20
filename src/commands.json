@@ -1,11 +1,7 @@
 [
     {
         "name": ":clear",
-        "ex": "ctext = '';\nvertices = [];\nedges = [];"
-    },
-    {
-        "name": "alert",
-        "ex": "alert('alert')"
+        "ex": "ctext = '';vertices = [];edges = [];"
     },
     {
         "name": ":cube",
@@ -13,11 +9,11 @@
     },
     {
         "name": ":rot",
-        "ex": "xanglev = rotationspeed;\nyanglev = rotationspeed*.9;\nctext = '';"
+        "ex": "xanglev = rotationspeed;yanglev = rotationspeed*.9;ctext = '';"
     },
     {
         "name": ":srot",
-        "ex": "xanglev = 0;\nyanglev = 0;\nctext='';"
+        "ex": "xanglev = 0;yanglev = 0;ctext='';"
     },
     {
         "name": ":initrot",
@@ -47,5 +43,25 @@
         "name": "open file",
         "cond": "ctext.slice(0,2)=='./'",
         "ex": "readfile('../assets/'+ctext.slice(2));ctext=''"
+    },
+    {
+        "name": ":xrot",
+        "cond": "ctext==':xrot'",
+        "ex": "xanglev=rotationspeed; ctext=''"
+    },
+    {
+        "name": ":yrot",
+        "cond": "ctext==':yrot'",
+        "ex": "yanglev=rotationspeed; ctext=''"
+    },
+    {
+        "name": "draw vertices",
+        "cond": "ctext==':drawv'",
+        "ex": "drawv=-drawv; ctext=''"
+    },
+    {
+        "name":"create cilinder",
+        "cond": "ctext==':ccld'",
+        "ex":"ccld(30,30,2,2/3); ctext=''"
     }
 ]

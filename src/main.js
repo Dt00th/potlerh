@@ -10,6 +10,7 @@ var edges = [];
 var scale = canvas.height/10;
 var ctext = "";
 var textout = "";
+var textlist = [];
 var commands = [];
 var commandhist = [];
 var histpos = 0;
@@ -23,6 +24,7 @@ let xangle = 0; let yangle = 0;
 let xanglev = 0; let yanglev = 0;
 let rotationspeed = .5;
 let FOV = 60;
+var drawv = 1;
 
 canvas.focus();
 readfile("../assets/cube.obj");
@@ -72,6 +74,9 @@ canvas.addEventListener("keydown", (event) => {
             }
             ctext = commandhist[commandhist.length-histpos];
         }
+    } else if(event.key=="Alt") {
+        mousebutton=1;
+        moused=1;
     } else if(event.key=="ArrowDown") {
         if(histpos>0) {
             histpos--;
@@ -100,7 +105,7 @@ const projscale = 600;
 function project(point) {
     let zOffset = point[2] + projd;
 
-    return [projscale*point[0]/FOV/zOffset, projscale*point[1]/FOV/zOffset];
+    return [projscale*point[0]/FOV/zOffset, projscale*point[1]/FOV/zOffset, zOffset];
 }
 function rotate(p, anglex, angley) {
     var rotated = structuredClone(p);
@@ -126,8 +131,7 @@ function setupcom() {
     try {
         fetch("commands.json").then((res) => res.text()).then((text) => {
             commands = JSON.parse(text);
-        }).catch((e) => console.error(e));   
-        read();
+        }).catch((e) => console.error(e));
     } catch(error) {
         console.error(error);
     }
@@ -185,27 +189,6 @@ function submit() {
     //ctext = "";
     //return(F());
 }
-
-//function genmatmesh(func) {
-//    let n = null;
-//    let res = .2;
-//    let amp = 1000;
-//    let limit1 = -amp/2;
-//    let limit2 = amp/2;
-//    for(let i = 0; i < func.length; i++) {
-//        if(func[i]=="x") {
-//            n = i;
-//            break;
-//        }
-//    }
-//    let coeff = ctext.slice(2, n);
-//    for(let i = 0; i < amp/res;i++) {
-//        let x1 = limit1 + res*i;
-//        vertices[i] = [x1, i, 0];
-//    }
-//    alert();
-//    ctext="";
-//}
 
 function download() {
     var text="";
@@ -281,12 +264,11 @@ function read(text) {
 function readfile(path) {
     try {
         fetch(path).then((res) => res.text()).then((text) => {
-            //console.log(text);
+            console.log(text);
             read(text);
         }).catch((e) => 
             console.error(e)
-        );   
-        read();
+        );
     } catch(error) {
         console.error(error);
     }
@@ -306,7 +288,13 @@ function render() {
             projp = structuredClone([]);
             for(let i = 0; i < vertices.length; i++) {
                 const rotated = rotate(vertices[i], xangle, yangle);
-                projp[i] = project(rotated);
+                let p = project(rotated);
+                //if(p) {
+                //    if((projd+p[2])>=0) {
+                //        projp[i] = p;
+                //    }
+                //}
+                projp[i]=p;
             }
 
             // Draw edges
@@ -314,36 +302,47 @@ function render() {
                 const p1 = projp[edges[i][0]];
                 const p2 = projp[edges[i][1]];
                 //console.log("i="+i+" p1: "+p1+"; p2: "+p2);
+                
                 ctx.moveTo(canvas.width/2+scale*p1[0], canvas.height/2+scale*p1[1]);
                 ctx.lineTo(canvas.width/2+scale*p2[0], canvas.height/2+scale*p2[1]);
             }
 
             // Draw vertices
-            for(let i = 0; i < projp.length; i++) {
-                const p1 = projp[i];
-                ctx.fillRect(canvas.width/2+scale*p1[0] - vertexpsize/2, canvas.height/2+scale*p1[1] - vertexpsize/2, vertexpsize, vertexpsize);
+            if(drawv==1) {
+                for(let i = 0; i < projp.length; i++) {
+                    const p1 = projp[i];
+                    ctx.fillRect(canvas.width/2+scale*p1[0] - vertexpsize/2, canvas.height/2+scale*p1[1] - vertexpsize/2, vertexpsize, vertexpsize);
+                }
             }
+            
+            //caughtest
+            let pt = project(caughtest);
+            ctx.fillRect(canvas.width/2+scale*pt[0]-vertexpsize/2, canvas.height/2+scale*pt[1]-vertexpsize/2, vertexpsize, vertexpsize);
         }
     }
 
     // render text
-    ctx.fillstyle="black";
-    ctx.font="12px serif";
-    ctx.fillText(intmode, canvas.width/2 - ctx.measureText(intmode).width/2, 12);
+    let fontsize1 = .03*canvas.height;
+    let fontsize2 = .09*canvas.height;
+    ctx.fillStyle="black"
+    ctx.font=fontsize1+"px serif";
+    ctx.fillText(intmode, canvas.width/2 - ctx.measureText(intmode).width/2, fontsize1);
 
+    // render textlist
+    ctx.fillStyle="black";
+    ctx.font=fontsize1+"px serif";
+    for(let i = 0; i < textlist.length; i++) {
+        ctx.fillText(textlist, canvas.width-ctext.measureText(textlist), fontsize1*i);
+    }
 
     // render textout
-    ctx.fillstyle="black";
-    ctx.font="12px serif";
-    ctx.fillText(textout, canvas.width/2 - ctx.measureText(textout).width/2, canvas.height-12);
+    ctx.fillStyle="black";
+    ctx.font=fontsize1+"px serif";
+    ctx.fillText(textout, canvas.width/2 - ctx.measureText(textout).width/2, canvas.height-fontsize1);
     // render ctext
     ctx.fillStyle="black";
-    if(ctext!="") {
-        ctx.font = "48px serif";
-        ctx.fillText(ctext, canvas.width/2 - ctx.measureText(ctext).width/2, canvas.height/2);
-    }
-    //ctx.moveTo(30, 50);
-    //ctx.lineTo(150, 100);
+    ctx.font = fontsize2+"px serif";
+    ctx.fillText(ctext, canvas.width/2 - ctx.measureText(ctext).width/2, canvas.height/2);
     ctx.stroke();
 }
 
@@ -361,14 +360,23 @@ function mainloop(currentTime) {
 let caught = null;
 let caughtatx = null, caughtaty = null;
 function update(deltaTime) {
+    // update object rotation
     xangle += xanglev*deltaTime;
     yangle += yanglev*deltaTime;
-    //xangle = 3*Math.PI/6;
-    //yangle = Math.PI/6;
+    xangle%=Math.PI*2;
+    yangle%=Math.PI*2;
+
+    // rotate object
     if(mousebutton==1 && moused==1) {
         let deltamousef = .05;
         xangle+=deltamousey*deltamousef;
-        yangle+=deltamousex*deltamousef;
+        if(xangle%180<90) {
+            yangle+=deltamousex*deltamousef;
+            textout = deltamousex;
+        } else if (xangle&180>=90) {
+            yangle+=-deltamousex*deltamousef;
+            textout = deltamousex;
+        }
     }
 
     // Check for pointer-vertex collision and move accordingly
@@ -389,37 +397,37 @@ function update(deltaTime) {
                 caughtatx = mousex;caughtaty= mousey;
             }
             movepoint(caught);
-            console.log("running");
         }
     } else {
         caught = null;
         caughtx = null; caughty = null; caughtz = null;
         caughtatx = null; caughtaty = null;
     }
-    //textout = caught;
 }
 
 let caughtx=null, caughty=null, caughtz=null;
+let caughtest = [];
+// TODO angles dont work correctly
 function movepoint(index) {
-    //vertices[index][0] = (mousex-canvas.width/2)/scale;
-    //vertices[index][1] = (mousey-canvas.height/2)/scale;
+    xanglev = 0; yanglev= 0;
 
     let pg = [caughtx, caughty, caughtz];
     let pr = {x:rotate(pg, xangle, yangle)[0], y:rotate(pg, xangle, yangle)[1], z:rotate(pg, xangle, yangle)[2]};
     let xr = pr.x;
-    let xv = caughtatx-canvas.width/2;
-    let yv = caughtaty-canvas.height/2;
-    let xvr = mousex-canvas.width/2;
-    let yvr = mousey-canvas.height/2;
-    let zoffset = projscale*xr/FOV/xv;
-    let xrf = xvr*FOV*zoffset/projscale;
-    let yrf = yvr*FOV*zoffset/projscale;
-    let zrf = pr.z;
+    let yr = pr.y;
+    let zr = pr.z;
+    let xv = (caughtatx-canvas.width/2);
+    let yv = (caughtaty-canvas.height/2);
+    let xvf = (mousex-canvas.width/2);
+    let yvf = (mousey-canvas.height/2);
 
-    //simplif
-    xrf = xvr*xr/xv;
-    yrf = yvr*xr/xv;
+    xrf = xvf*xr/xv;
+    yrf = yvf*yr/yv;
+    zrf = zr;
+    
     let pgf = rotate([xrf, yrf, zrf], -xangle, -yangle);
+    //caughtest = [xrf, yrf, zrf];
+    //console.log("xgf:"+pgf[0]+", ygf:"+pgf[1]+", zgf:"+pgf[2]+"; xrf:"+xrf+", yrf:"+yrf+", zrf:"+zrf);
     vertices[index] = structuredClone(pgf);
 }
 
@@ -428,13 +436,44 @@ function createsphere() {
     let res = 1000;
     let r = 1;
     let rot = 30.1;
+    edges = structuredClone([]);
+    vertices = structuredClone([]);
     for(let i = 0; i < res; i++) {
-        let x, y, z;
-        z = i/res -r/2; //Math.cos(i/res*Math.PI)*
-        x =r/2*Math.sin(i/res*Math.PI)*Math.cos(i/res*Math.PI*rot); y = r/2*Math.sin(i/res*Math.PI)*Math.sin(i/res*Math.PI*rot);
+        let beta = i*2*Math.PI/res;
+        let x,y,z;
+        x = Math.sin(beta)*Math.cos(2*Math.PI*beta)*r;
+        y = Math.sin(beta)*Math.sin(2*Math.PI*beta)*r;
+        z = Math.cos(beta)*r;
         vertices[i] = [x, y, z];
-        if(i+1!=res) {
-            edges[i]= [i, i+1];
+        console.log(vertices[i]);
+    }
+    for(let i = 0; i < res-1; i++) {
+        edges[i] = [vertices[i], vertices[i+1]];
+    }
+}
+
+function ccld(vres, cres, height, r) {
+    vertices=structuredClone([]);
+    edges = structuredClone([]);
+    vertices[cres*cres] = [0, -height/2, 0];
+    vertices[cres*cres+1] = [0, height/2, 0];
+    for(let i = 0; i < vres; i++) {
+        let y = i/vres*height-height/2;
+        for(let j = 0; j < cres; j++) {
+            let theta = j/cres*2*Math.PI;
+            let x = Math.cos(theta)*r;
+            let z = Math.sin(theta)*r;
+            vertices[i*cres+j] = [x, y, z];
+            edges[i*cres+j] = [i*cres+j, (i*cres+(j+1)%cres)];
+            if(i+1<vres) {
+                edges[vres*cres+i*cres+j] = [i*cres+j, (i+1)*cres+j];
+            }
+            if(i==0){
+                edges[vres*cres*2-vres+j]=[j, cres*cres];
+            }
+            if(i==1) {
+                edges[vres*cres*2-vres+cres*i+j]=[(vres-1)*cres+j, cres*cres+i];
+            }
         }
     }
 }
