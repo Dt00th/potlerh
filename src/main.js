@@ -133,6 +133,7 @@ function addmode(event) {
         intmode="movev";
         addselect[0] = null; addselect[1] = null;
     } else if(event.key=="a") {
+        // add point in the middle of the addselected
         if(addselect[0]!=null && addselect[1]!=null) {
             let p = [];
             p[0] = 1/2*(Number(vertices[addselect[0]][0]) + Number(vertices[addselect[1]][0]));
@@ -145,11 +146,13 @@ function addmode(event) {
             addselect[0]=null; addselect[1]=null;
         }
     } else if(event.key=="c") {
+        // connect addselected
         if(addselect[0]!=null && addselect[1]!=null) {
             edges[edges.length] = [addselect[0],addselect[1]];
             addselect[0]=null; addselect[1]=null;
         }
     } else if(event.key="x") {
+        // cut addselected
         if(addselect[0]!=null && addselect[1]!=null) {
             for(let i = 0; i < edges.length; i++) {
                 if(edges[i][0]==addselect[0] && edges[i][1]==addselect[1]) {
@@ -199,7 +202,7 @@ function rotate(p, anglex, angley) {
 setupcom();
 function setupcom() {
     try {
-        fetch("src/commands.json").then((res) => res.text()).then((text) => {
+        fetch("./src/commands.json").then((res) => res.text()).then((text) => {
             commands = JSON.parse(text);
         }).catch((e) => console.error(e));
     } catch(error) {
@@ -292,8 +295,16 @@ function read(text) {
     let j = -1;
     let k = 0;
     let value = "";
-    vertices = structuredClone([]);
-    edges = structuredClone([]);
+    
+    let vertlen=0, edlen=0;
+    if(vertices) {
+        vertlen= vertices.length;
+    }
+    if(edges) {
+        edlen = edges.length;
+    }
+    console.log("edges1");
+    console.log(edges);
     for(let i = 0; i < text.length; i++) {
         if(text[i]=="v") {
             mode = "v";
@@ -306,15 +317,15 @@ function read(text) {
         if(text[i]==" ") {
             if(j>=0) {
                 if(mode=="v"){
-                    if(!vertices[k]) {
-                        vertices[k] = [];
+                    if(!vertices[vertlen+k]) {
+                        vertices[vertlen+k] = [];
                     }
-                    vertices[k][j] = value;
+                    vertices[vertlen+k][j] = value;
                 } else if(mode=="l") {
-                    if(!edges[k]) {
-                        edges[k] = [];
+                    if(!edges[edlen+k]) {
+                        edges[edlen+k] = [];
                     }
-                    edges[k][j] = value;
+                    edges[edlen+k][j] = Number(value)+Number(vertlen);
                 }
             }
             value = "";
@@ -334,7 +345,7 @@ function read(text) {
 function readfile(path) {
     try {
         fetch(path).then((res) => res.text()).then((text) => {
-            console.log(text);
+            //console.log(text);
             read(text);
         }).catch((e) => 
             console.error(e)
@@ -364,7 +375,11 @@ function render() {
                 //        projp[i] = p;
                 //    }
                 //}
-                projp[i]=p;
+                if(p[2]>=0) {
+                    projp[i]=p;
+                } else {
+                    projp[i] = null;
+                }
             }
 
             // Draw edges
@@ -373,8 +388,10 @@ function render() {
                 const p2 = projp[edges[i][1]];
                 //console.log("i="+i+" p1: "+p1+"; p2: "+p2);
                 
-                ctx.moveTo(canvas.width/2+scale*p1[0], canvas.height/2+scale*p1[1]);
-                ctx.lineTo(canvas.width/2+scale*p2[0], canvas.height/2+scale*p2[1]);
+                if(p1!=null && p2!=null) {
+                    ctx.moveTo(canvas.width/2+scale*p1[0], canvas.height/2+scale*p1[1]);
+                    ctx.lineTo(canvas.width/2+scale*p2[0], canvas.height/2+scale*p2[1]);
+                }
             }
 
             // Draw vertices
@@ -389,7 +406,9 @@ function render() {
                     }
                     
                     const p1 = projp[i];
-                    ctx.fillRect(canvas.width/2+scale*p1[0] - vertexpsize/2, canvas.height/2+scale*p1[1] - vertexpsize/2, vertexpsize, vertexpsize);
+                    if(p1!=null) {
+                        ctx.fillRect(canvas.width/2+scale*p1[0] - vertexpsize/2, canvas.height/2+scale*p1[1] - vertexpsize/2, vertexpsize, vertexpsize);
+                    }
                 }
             }
             
@@ -446,7 +465,7 @@ function update(deltaTime) {
 
     // rotate object
     if(mousebutton==1 && moused==1) {
-        let deltamousef = .05;
+        let deltamousef = .00007*canvas.height;
         xangle+=deltamousey*deltamousef;
         if(xangle%2*Math.PI<Math.PI) {
             yangle+=deltamousex*deltamousef;

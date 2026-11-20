@@ -42,7 +42,7 @@
     {
         "name": "open file",
         "cond": "ctext.slice(0,2)=='./'",
-        "ex": "readfile('../assets/'+ctext.slice(2));ctext=''"
+        "ex": "readfile('./assets/'+ctext.slice(2));ctext=''"
     },
     {
         "name": ":xrot",
