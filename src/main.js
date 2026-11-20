@@ -370,12 +370,12 @@ function update(deltaTime) {
     if(mousebutton==1 && moused==1) {
         let deltamousef = .05;
         xangle+=deltamousey*deltamousef;
-        if(xangle%180<90) {
+        if(xangle%2*Math.PI<Math.PI) {
             yangle+=deltamousex*deltamousef;
-            textout = deltamousex;
-        } else if (xangle&180>=90) {
+            //textout = "case 1: "+deltamousex+", "+deltamousey;
+        } else if (xangle&2*Math.PI>=Math.PI) {
             yangle+=-deltamousex*deltamousef;
-            textout = deltamousex;
+            //textout = "case 2:"+deltamousex+", "+deltamousey;
         }
     }
 
