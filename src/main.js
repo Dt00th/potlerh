@@ -19,18 +19,32 @@ const writebutton = document.getElementById("writebutton");
 const textinput = document.getElementById("textinput");
 
 // Settings
-let intmode = "";
+let intmode = "normal";
 let xangle = 0; let yangle = 0;
 let xanglev = 0; let yanglev = 0;
 let rotationspeed = .5;
 let FOV = 60;
 var drawv = 1;
+// proj
+let projd = 5;
+const projscale = 600;
 
-canvas.focus();
-readfile("/assets/cube.obj");
+// init
+function init() {
+    canvas.focus();
+    readfile("/assets/cube.obj");
+    projd = 5;
+    xangle = 0;yangle = 0;
+    xanglev = 0; yanglev = 0;
+}
+init();
+
+// Add mode
+let addselect = [];
 
 let moused = 0;
 let mousebutton = 0;
+let scroll = 0;
 const rect = canvas.getBoundingClientRect();
 const scaleX = canvas.width/rect.width;
 const scaleY = canvas.height/rect.height;
@@ -54,43 +68,56 @@ canvas.addEventListener("mousemove", (event) => {
 canvas.addEventListener("mousestop", ()=> {
     deltamousex = 0; deltamouseY = 0;
 })
+canvas.addEventListener("wheel", (event)=> {
+    scroll = event.deltaY;
+    textout = scroll;
+
+    scrolltimeout = setTimeout(()=>{
+        scroll = 0;
+        textout = scroll;
+    }, 80);
+})
 canvas.addEventListener("keydown", (event) => {
-    if(event.key=="Enter") {
-        if(intmode!="add") {
+    if(intmode=="add") {
+        addmode(event);
+    } else {
+        if(event.key=="Enter") {
             let a = submit();
             if(commandhist[commandhist.length-1]!=ctext) {
                 commandhist.push(ctext);
                 histpos = 0;
             }
-        }
-    } else if(event.key=="Backspace") {
-        ctext= ctext.slice(0, -1);
-    } else if(event.key=="Escape") {
-        ctext="";
-    } else if(event.key=="ArrowUp") {
-        if(commandhist.length>1) {
-            if(histpos<commandhist.length) {
-                histpos++;
+        } else if(event.key=="Backspace") {
+            ctext= ctext.slice(0, -1);
+        } else if(event.key=="Escape") {
+            ctext="";
+        } else if(event.key=="ArrowUp") {
+            if(commandhist.length>1) {
+                if(histpos<commandhist.length) {
+                    histpos++;
+                }
+                ctext = commandhist[commandhist.length-histpos];
             }
-            ctext = commandhist[commandhist.length-histpos];
+        } else if(event.key=="Alt") {
+            mousebutton=1;
+            moused=1;
+        } else if(event.key=="ArrowDown") {
+            if(histpos>0) {
+                histpos--;
+            }
+            if(histpos==0) {
+                ctext = "";
+            } else {
+                ctext = commandhist[commandhist.length-histpos];
+            }
+        } else if(intmode!="add") {
+            if(event.key.length==1) {
+                ctext+=event.key;
+            }
         }
-    } else if(event.key=="Alt") {
-        mousebutton=1;
-        moused=1;
-    } else if(event.key=="ArrowDown") {
-        if(histpos>0) {
-            histpos--;
-        }
-        if(histpos==0) {
-            ctext = "";
-        } else {
-            ctext = commandhist[commandhist.length-histpos];
-        }
-    } else if(event.key.length==1) {
-        ctext+=event.key;
     }
+    console.log(event.key);
 })
-
 textinput.addEventListener("keydown", function (event) {
     if(event.key=="Enter") {
         const text = textinput.value;
@@ -99,8 +126,41 @@ textinput.addEventListener("keydown", function (event) {
     }
 })
 
-const projd = 5;
-const projscale = 600;
+function addmode(event) {
+    if(event.key=="n") {
+        intmode="normal";
+        addselect[0] = null; addselect[1] = null;
+    } else if(event.key=="m") {
+        intmode="movev";
+        addselect[0] = null; addselect[1] = null;
+    } else if(event.key=="a") {
+        if(addselect[0]!=null && addselect[1]!=null) {
+            let p = [];
+            p[0] = 1/2*(Number(vertices[addselect[0]][0]) + Number(vertices[addselect[1]][0]));
+            p[1] = 1/2*(Number(vertices[addselect[0]][1]) + Number(vertices[addselect[1]][1]));
+            p[2] = 1/2*(Number(vertices[addselect[0]][2]) + Number(vertices[addselect[1]][2]));
+            let index = vertices.length;
+            vertices[index] = structuredClone(p);
+            edges[edges.length] = [addselect[0], index];
+            edges[edges.length] = [addselect[1], index];
+            console.log(vertices[index]);
+            addselect[0]=null; addselect[1]=null;
+        }
+    } else if(event.key=="c") {
+        if(addselect[0]!=null && addselect[1]!=null) {
+            edges[edges.length] = [addselect[0],addselect[1]];
+            addselect[0]=null; addselect[1]=null;
+        }
+    } else if(event.key=="Escape") {
+        addselect[0] = null; addselect[1] = null;
+    } else if(event.key=="Backspace") {
+        if(addselect[1]!=null) {
+            addselect[1]=null;
+        } else if(addselect[0]!=null) {
+            addselect[0] = null; addselect[1] = null;
+        }
+    }
+}
 
 function project(point) {
     let zOffset = point[2] + projd;
@@ -146,7 +206,7 @@ function submit() {
             return "add";
         }
         if(ctext==":normal") {
-            intmode = "";
+            intmode = "normal";
             ctext = "";
             return "normal";
         }
@@ -310,6 +370,14 @@ function render() {
             // Draw vertices
             if(drawv==1) {
                 for(let i = 0; i < projp.length; i++) {
+                    if(addselect) {
+                        if(i==addselect[0] || i==addselect[1]) {
+                            ctx.fillStyle="blue";
+                        } else {
+                            ctx.fillStyle="red";
+                        }
+                    }
+                    
                     const p1 = projp[i];
                     ctx.fillRect(canvas.width/2+scale*p1[0] - vertexpsize/2, canvas.height/2+scale*p1[1] - vertexpsize/2, vertexpsize, vertexpsize);
                 }
@@ -379,14 +447,19 @@ function update(deltaTime) {
         }
     }
 
-    // Check for pointer-vertex collision and move accordingly
-    if(moused==1 && intmode=="movev" && mousebutton==0) {
+    // set distance
+    projd += projd*scroll*.001;
+
+    // Check for pointer-vertex collision and react accordingly
+    if(moused==1 && mousebutton==0) {
         if(caught==null) {
             for(let i = 0; i < projp.length; i++) {
                 p = {x:canvas.width/2+scale*projp[i][0],y:canvas.height/2+scale*projp[i][1]};
                 if((mousex>p.x-vertexpsize/2 && mousex<p.x+vertexpsize/2) && (mousey>p.y-vertexpsize/2 && mousey<p.y+vertexpsize/2)) {
-                    textout = "caught "+i;
                     caught = i;
+                    if(intmode!="normal") {
+                        textout = "selected "+caught;
+                    }
                 }
             }
         } else if(caught!=null) {
@@ -396,7 +469,15 @@ function update(deltaTime) {
             if(caughtatx==null || caughtaty==null) {
                 caughtatx = mousex;caughtaty= mousey;
             }
-            movepoint(caught);
+            if(intmode=="movev") {
+                movepoint(caught);
+            } else if(intmode=="add") {
+                if(addselect[0]==null) {
+                    addselect[0] = caught;
+                } else if(addselect[0]!=null) {
+                    addselect[1] = caught;
+                }
+            }
         }
     } else {
         caught = null;

@@ -63,5 +63,15 @@
         "name":"create cilinder",
         "cond": "ctext==':ccld'",
         "ex":"ccld(30,30,2,2/3); ctext=''"
+    },
+    {
+        "name":":d",
+        "cond":"ctext==':d'",
+        "ex":"projd=5;ctext=''"
+    },
+    {
+        "name":"set initial conditions",
+        "cond":"ctext==':init'",
+        "ex":"init();ctext=''"
     }
 ]
