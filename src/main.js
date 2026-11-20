@@ -116,7 +116,6 @@ canvas.addEventListener("keydown", (event) => {
             }
         }
     }
-    console.log(event.key);
 })
 textinput.addEventListener("keydown", function (event) {
     if(event.key=="Enter") {
@@ -143,13 +142,24 @@ function addmode(event) {
             vertices[index] = structuredClone(p);
             edges[edges.length] = [addselect[0], index];
             edges[edges.length] = [addselect[1], index];
-            console.log(vertices[index]);
             addselect[0]=null; addselect[1]=null;
         }
     } else if(event.key=="c") {
         if(addselect[0]!=null && addselect[1]!=null) {
             edges[edges.length] = [addselect[0],addselect[1]];
             addselect[0]=null; addselect[1]=null;
+        }
+    } else if(event.key="x") {
+        if(addselect[0]!=null && addselect[1]!=null) {
+            for(let i = 0; i < edges.length; i++) {
+                if(edges[i][0]==addselect[0] && edges[i][1]==addselect[1]) {
+                    edges.splice(addselect, 1);
+                    addselect[0]=null; addselect[1]=null;
+                } else if(edges[i][0]==addselect[1]&&edges[i][1]==addselect[0]) {
+                    edges.splice([addselect[1], addselect[0]], 1);
+                    addselect[0]=null; addselect[1]=null;
+                }
+            }
         }
     } else if(event.key=="Escape") {
         addselect[0] = null; addselect[1] = null;
@@ -340,8 +350,8 @@ function render() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.beginPath();
     ctx.fillStyle = "red";
-    if(vertices[0]!=null){
-        if(vertices[1]==null) {
+    if(vertices!=structuredClone([]) && edges!=structuredClone([])){
+        if(vertices[0]!=null && vertices[1]==null) {
             ctx.fillRect(scale*vertices[0][0], scale*vertices[0][1], 3, 3);
         } else {
             // Project
@@ -472,9 +482,15 @@ function update(deltaTime) {
             if(intmode=="movev") {
                 movepoint(caught);
             } else if(intmode=="add") {
-                if(addselect[0]==null) {
+                if(addselect[0]==null && addselect[1]==null) {
                     addselect[0] = caught;
-                } else if(addselect[0]!=null) {
+                } else if(addselect[0]==null && addselect[1]==null) {
+
+                } else if(addselect[0]==null && addselect[1]!=null) {
+
+                } else if(addselect[0]!=null && addselect[1]==null) {
+                    addselect[1] = caught;
+                } else if(addselect[0]!=null && addselect[1]!=null) {
                     addselect[1] = caught;
                 }
             }
