@@ -5,6 +5,18 @@
         "desc":"Remove all vertices"
     },
     {
+        "name": ":submit",
+        "cond":"ctext==':submit'",
+        "ex":"submitdownload();ctext=''",
+        "desc": "Submit object file"
+    },
+    {
+        "name":"sel",
+        "cond":"ctext.slice(0,3)=='sel'",
+        "ex": "sel(ctext.slice(3));ctext=''",
+        "desc": "Add index to selection"
+    },
+    {
         "name": ":cube",
         "ex": "ctext = '';readfile('./assets/cube.obj');",
         "desc":"Generate cube"
@@ -37,16 +49,34 @@
         "desc":"Set yangle"
     },
     {
-        "name": "+= xangle",
+        "name": "+=xangle",
         "cond": "ctext.slice(0, 8)=='xangle+='",
         "ex": "xangle+=ctext.slice(8)/180*Math.PI;ctext=''",
         "desc":"Add following angle to xangle"
     },
     {
-        "name": "+= yangle",
+        "name": "+=yangle",
         "cond": "ctext.slice(0, 8)=='yangle+='",
         "ex": "yangle+=ctext.slice(8)/180*Math.PI;ctext=''",
         "desc":"Add following angle to yangle"
+    },
+    {
+        "name": "dx=",
+        "cond": "ctext.slice(0, 3)=='dx='",
+        "ex": "deltacaught=[];deltacaught=[-ctext.slice(3), 0, 0];ctext=''",
+        "desc":"Set deltax"
+    },
+    {
+        "name": "dy=",
+        "cond": "ctext.slice(0, 3)=='dy='",
+        "ex": "deltacaught=[];deltacaught=[0, -ctext.slice(3), 0];ctext=''",
+        "desc":"Set deltay"
+    },
+    {
+        "name": "dz=",
+        "cond": "ctext.slice(0, 3)=='dz='",
+        "ex": "deltacaught=[];deltacaught=[0, 0, ctext.slice(3)];ctext=''",
+        "desc":"Set deltaz"
     },
     {
         "name": "./[file]",

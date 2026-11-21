@@ -1,25 +1,34 @@
+//html
 const scaleelement = document.getElementById("scale");
-const output = document.getElementById("output");
+const textoutputelement = document.getElementById("textoutput");
 const canvas = document.getElementById("canvas");
 const ctx = canvas.getContext("2d");
 const width = 500, height = 500;
-var mousex, mousey;
-var deltamousex, deltamousey;
-var control = 0;
-var vertices = [];
-var edges = [];
-var scale = canvas.height/10;
-var ctext = "";
-var textout = "";
-var textlist = [];
-var commands = [];
-var commandhist = [];
-var histpos = 0;
-// Add mode
-let addselect = [];
-
 const writebutton = document.getElementById("writebutton");
 const textinput = document.getElementById("textinput");
+const rect = canvas.getBoundingClientRect();
+const scaleX = canvas.width/rect.width;
+const scaleY = canvas.height/rect.height;
+var commands = [];
+
+// display
+var ctext = "";
+var textout = "";
+var textoutput = "";
+var textlist = [];
+
+
+// World
+var vertices = [];
+var edges = [];
+// Interact-variables
+let addselect = [];
+var commandhist = [];
+var histpos = 0;
+let caught = null;
+let caughtx=null, caughty=null, caughtz=null;
+let caughtatx = null, caughtaty = null;
+let deltacaught = null;
 
 // Settings
 let theme = 0;
@@ -32,9 +41,18 @@ let FOV = 60;
 var drawv = 1;
 let projd = 5;
 const projscale = 600;
+let deltamousef = .04;
+var scale = canvas.height/10;
 
 // keys
 var epressed = 0;
+var mousex, mousey;
+var deltamousex, deltamousey;
+var control = 0;
+let moused = 0;
+let mousebutton = 0;
+let scroll = 0;
+let ArrowDown = 0, ArrowUp = 0, ArrowLeft = 0, ArrowRight = 0;
 
 // init
 function init() {
@@ -56,12 +74,7 @@ function init() {
 }
 init();
 
-let moused = 0;
-let mousebutton = 0;
-let scroll = 0;
-const rect = canvas.getBoundingClientRect();
-const scaleX = canvas.width/rect.width;
-const scaleY = canvas.height/rect.height;
+// Event listeners
 canvas.addEventListener("click", () => {
     canvas.focus();
 })
@@ -98,6 +111,18 @@ canvas.addEventListener("keydown", (event) => {
     if(event.key=="e" && intmode!="normal") {
         epressed = 1;
     }
+    if(event.key=="ArrowUp") {
+        ArrowUp = 1;
+    }
+    if(event.key=="ArrowDown") {
+        ArrowDown = 1;
+    }
+    if(event.key=="ArrowLeft") {
+        ArrowLeft = 1;
+    }
+    if(event.key=="ArrowRight") {
+        ArrowRight = 1;
+    }
     processinput(event);
 })
 canvas.addEventListener("keyup", (event) => {
@@ -107,6 +132,18 @@ canvas.addEventListener("keyup", (event) => {
     if(event.key=="e") {
         epressed = 0;
     }
+    if(event.key=="ArrowUp") {
+        ArrowUp = 0;
+    }
+    if(event.key=="ArrowDown") {
+        ArrowDown = 0;
+    }
+    if(event.key=="ArrowLeft") {
+        ArrowLeft = 0;
+    }
+    if(event.key=="ArrowRight") {
+        ArrowRight = 0;
+    }
 })
 textinput.addEventListener("keydown", function (event) {
     if(event.key=="Enter" && intmode=="normal") {
@@ -115,6 +152,15 @@ textinput.addEventListener("keydown", function (event) {
         read(text);
     }
 })
+function sel(index) {
+    for(let i = 0; i <addselect.length;i++) {
+        if(index==i) {
+            addselect.splice(index, 1);
+            return 0;
+        }
+    }
+    addselect.push(index);
+}
 function processinput(event) {
     if(event.key=="Escape") {
         addselect=structuredClone([]);
@@ -165,8 +211,35 @@ function normalmode(event) {
 }
 
 function interactmode(event) {
-    if(control==0) {    
-        if(event.key=="n") {
+    let deltarotf = 2*deltamousef;
+    if(ArrowUp==1) {
+        xangle+=deltarotf;
+    }
+    if(ArrowDown==1) {
+        xangle-=deltarotf;
+    }
+    if(ArrowLeft==1) {
+        if(xangle%2*Math.PI<Math.PI) {
+            yangle+=deltarotf;
+            //textout = "case 1: "+deltamousex+", "+deltamousey;
+        } else if (xangle&2*Math.PI>=Math.PI) {
+            yangle+=-deltarotf;
+            //textout = "case 2:"+deltamousex+", "+deltamousey;
+        }
+    }
+    if(ArrowRight==1) {
+        if(xangle%2*Math.PI<Math.PI) {
+            yangle+=-deltarotf;
+            //textout = "case 1: "+deltamousex+", "+deltamousey;
+        } else if (xangle&2*Math.PI>=Math.PI) {
+            yangle+=deltarotf;
+            //textout = "case 2:"+deltamousex+", "+deltamousey;
+        }
+    }
+    
+    textout = "";
+    if(control==0) {
+        if(event.key==" ") {
             intmode="normal";
             addselect[0] = null; addselect[1] = null;
         } else if(event.key=="a") {
@@ -324,25 +397,29 @@ function submit() {
     //return(F());
 }
 
-function download() {
-    var text="";
-    var element = document.createElement('a');
-
+function submitdownload() {
+    textoutput = "";
     for(let i = 0; i < vertices.length; i++) {
-        text += "v ";
+        textoutput += "v ";
         for(let j = 0; j < 3; j++) {
-            text += vertices[i][j]+" ";
+            textoutput += vertices[i][j]+" ";
         }
         if(i != vertices.length-1) {
-            text+="\n";
+            textoutput+="\n";
         }
     }
     for(let i = 0; i < edges.length; i++) {
         for(let j = 0; j < edges[i].length; j++) {
-            text += "\nl " + edges[i][0] + " " + edges[i][1]+" ";
+            textoutput += "\nl " + edges[i][0] + " " + edges[i][1]+" ";
         }
     }
-    element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
+}
+
+function download() {
+    var element = document.createElement('a');
+
+    
+    element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(textoutput));
     element.setAttribute('download', "objectname.obj");
 
     element.style.display = 'none';
@@ -522,6 +599,9 @@ function render() {
     ctx.font = fontsize2+"px serif";
     ctx.fillText(ctext, canvas.width/2 - ctx.measureText(ctext).width/2, canvas.height/2);
     ctx.stroke();
+
+    //update textoutput
+    textoutputelement.value = textoutput;
 }
 
 let lastTime = 0;
@@ -535,8 +615,6 @@ function mainloop(currentTime) {
     requestAnimationFrame(mainloop);
 }
 
-let caught = null;
-let caughtatx = null, caughtaty = null;
 function update(deltaTime) {
     // update object rotation
     xangle += xanglev*deltaTime;
@@ -546,7 +624,6 @@ function update(deltaTime) {
 
     // manually rotate object
     if(mousebutton==1 && moused==1) {
-        let deltamousef = .00004*canvas.height;
         xangle+=deltamousey*deltamousef;
         if(xangle%2*Math.PI<Math.PI) {
             yangle+=deltamousex*deltamousef;
@@ -608,17 +685,17 @@ function update(deltaTime) {
             }
             caught=null;
             caughtx=null;caughty=null;caughtz=null;
-            caughtatx=null;caughtay=null;
+            caughtatx=null;caughtaty=null;
         }
     } else if(moused==0) {
+        // move relatice to deltacaught
         if(deltacaught!=null) {
             vertices[caught]=[caughtx, caughty, caughtz];
             console.log(deltacaught);
-            console.log(caught);
-            console.log(vertices[caught]);
-            console.log(addselect);
+            console.log(vertices[addselect[0]]);
+            textout=addselect[0];
             for(let i = 0; i<addselect.length; i++) {
-                if(vertices[addselect[i]]) {
+                if(vertices[addselect[i]]&&deltacaught.length==3) {
                     vertices[addselect[i]][0] = Number(vertices[addselect[i]][0])+Number(deltacaught[0]);
                     vertices[addselect[i]][1] = Number(vertices[addselect[i]][1])+Number(deltacaught[1]);
                     vertices[addselect[i]][2] = Number(vertices[addselect[i]][2])+Number(deltacaught[2]);
@@ -636,8 +713,6 @@ function update(deltaTime) {
     //textout = caught;
 }
 
-let caughtx=null, caughty=null, caughtz=null;
-let deltacaught = null;
 // TODO angles dont work correctly
 function movepoint(index) {
     xanglev = 0; yanglev= 0;
