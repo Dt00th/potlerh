@@ -1,97 +1,117 @@
 [
     {
         "name": ":clear",
-        "ex": "ctext = '';vertices = [];edges = [];"
+        "ex": "ctext = '';vertices = [];edges = [];",
+        "desc":"Remove all vertices"
     },
     {
         "name": ":cube",
-        "ex": "ctext = '';readfile('./assets/cube.obj');"
+        "ex": "ctext = '';readfile('./assets/cube.obj');",
+        "desc":"Generate cube"
     },
     {
         "name": ":rot",
-        "ex": "xanglev = rotationspeed;yanglev = rotationspeed*.9;ctext = '';"
+        "ex": "xanglev = rotationspeed;yanglev = rotationspeed*.9;ctext = '';",
+        "desc":"Start rotation with default speed"
     },
     {
         "name": ":srot",
-        "ex": "xanglev = 0;yanglev = 0;ctext='';"
+        "ex": "xanglev = 0;yanglev = 0;ctext='';",
+        "desc":"Stop rotation"
     },
     {
         "name": ":initrot",
-        "ex": "ctext='';xangle=0;yangle=0"
+        "ex": "ctext='';xangle=0;yangle=0",
+        "desc":"Set rotation to default"
     },
     {
-        "name": "set xangle",
+        "name": "xangle=",
         "cond": "ctext.slice(0, 7)=='xangle='",
-        "ex": "xangle=ctext.slice(7)/180*Math.PI;ctext=''"
+        "ex": "xangle=ctext.slice(7)/180*Math.PI;ctext=''",
+        "desc":"Set yangle"
     },
     {
-        "name": "set yangle",
+        "name": "yangle=",
         "cond": "ctext.slice(0, 7)=='yangle='",
-        "ex": "yangle=ctext.slice(7)/180*Math.PI;ctext=''"
+        "ex": "yangle=ctext.slice(7)/180*Math.PI;ctext=''",
+        "desc":"Set yangle"
     },
     {
         "name": "+= xangle",
         "cond": "ctext.slice(0, 8)=='xangle+='",
-        "ex": "xangle+=ctext.slice(8)/180*Math.PI;ctext=''"
+        "ex": "xangle+=ctext.slice(8)/180*Math.PI;ctext=''",
+        "desc":"Add following angle to xangle"
     },
     {
         "name": "+= yangle",
         "cond": "ctext.slice(0, 8)=='yangle+='",
-        "ex": "yangle+=ctext.slice(8)/180*Math.PI;ctext=''"
+        "ex": "yangle+=ctext.slice(8)/180*Math.PI;ctext=''",
+        "desc":"Add following angle to yangle"
     },
     {
-        "name": "open file",
+        "name": "./[file]",
         "cond": "ctext.slice(0,2)=='./'",
-        "ex": "readfile('./assets/'+ctext.slice(2));ctext=''"
+        "ex": "readfile('./assets/'+ctext.slice(2));ctext=''",
+        "desc":"open file"
     },
     {
         "name": ":xrot",
         "cond": "ctext==':xrot'",
-        "ex": "xanglev=rotationspeed; ctext=''"
+        "ex": "xanglev=rotationspeed; ctext=''",
+        "desc":"yanglev=rotationspeed"
     },
     {
         "name": ":yrot",
         "cond": "ctext==':yrot'",
-        "ex": "yanglev=rotationspeed; ctext=''"
+        "ex": "yanglev=rotationspeed; ctext=''",
+        "desc":"yanglev=rotationspeed"
     },
     {
-        "name": "draw vertices",
+        "name": ":drawv",
         "cond": "ctext==':drawv'",
-        "ex": "drawv=-drawv; ctext=''"
+        "ex": "drawv=-drawv; ctext=''",
+        "desc":"Toggle draw-vertices mode"
     },
     {
-        "name":"generate cilinder",
+        "name":":ccld",
         "cond": "ctext==':ccld'",
-        "ex":"ccld(30,30,2,2/3); ctext=''"
+        "ex":"ccld(30,30,2,2/3); ctext=''",
+        "desc":"Generate cilinder"
     },
     {
-        "name":"generate sphere",
+        "name":":gsphere",
         "cond": "ctext==':gsphere'",
-        "ex":"gensphere(1, 100, 20); drawv+=-1; ctext=''"
+        "ex":"gensphere(1, 100, 20); drawv+=-1; ctext=''",
+        "desc":"Generate sphere"
     },
     {
         "name":":d",
         "cond":"ctext==':d'",
-        "ex":"projd=5;ctext=''"
+        "ex":"projd=5;ctext=''",
+        "desc":"Set distance to default"
     },
     {
-        "name":"set initial conditions",
+        "name":":init",
         "cond":"ctext==':init'",
-        "ex":"init();ctext=''"
+        "ex":"init();ctext=''",
+        "desc":"Set initial conditions"
     },
     {
         "name":":interact",
         "cond":"ctext==':i'",
-        "ex":"intmode='interact';ctext=''"
+        "ex":"intmode='interact';ctext=''",
+        "desc":"Set interact mode to interact"
     },
     {
-        "name": "generate circunference",
+        "name": ":circle",
         "cond":"ctext==':circle'",
-        "ex": "ccld(30,30,0,1);;ctext=''"
+        "ex": "ccld(30,30,0,1);;ctext=''",
+        "desc":"generate circunference"
     },
     {
-        "name": "show/hide index",
+        "name": ":showi",
         "cond":"ctext==':showi'",
-        "ex":"showind*=-1;ctext=''"
+        "ex":"showind*=-1;ctext=''",
+        "desc":"Toggle show-index mode"
     }
 ]
