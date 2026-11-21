@@ -2,11 +2,11 @@
 Web page for generating wiremesh obj files
 
 ## Functionalities
-    - move around
-        -distance: the scrollwheel changes the distance to the object
-        -rotation: pressing the scrollwheel will rotate the object around the camera
-    - download: download the obj file with the download button
-    - read: read the provided text after pressing enter if it is in the correct formatting
+- move around
+    -distance: the scrollwheel changes the distance to the object
+    -rotation: pressing the scrollwheel will rotate the object around the camera
+- download: download the obj file with the download button
+- read: read the provided text after pressing enter if it is in the correct formatting
 
 ## Commands in normal mode
 ### :clear
