@@ -5,7 +5,7 @@
     },
     {
         "name": ":cube",
-        "ex": "ctext = '';readfile('../assets/cube.obj');"
+        "ex": "ctext = '';readfile('./assets/cube.obj');"
     },
     {
         "name": ":rot",
@@ -73,5 +73,10 @@
         "name":"set initial conditions",
         "cond":"ctext==':init'",
         "ex":"init();ctext=''"
+    },
+    {
+        "name":":interact",
+        "cond":"ctext==':i'",
+        "ex":"intmode='interact';ctext=''"
     }
 ]

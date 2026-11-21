@@ -5,6 +5,7 @@ const ctx = canvas.getContext("2d");
 const width = 500, height = 500;
 var mousex, mousey;
 var deltamousex, deltamousey;
+var control = 0;
 var vertices = [];
 var edges = [];
 var scale = canvas.height/10;
@@ -14,33 +15,36 @@ var textlist = [];
 var commands = [];
 var commandhist = [];
 var histpos = 0;
+// Add mode
+let addselect = [];
 
 const writebutton = document.getElementById("writebutton");
 const textinput = document.getElementById("textinput");
 
 // Settings
-let intmode = "normal";
+let intmode = "interact";
 let xangle = 0; let yangle = 0;
 let xanglev = 0; let yanglev = 0;
 let rotationspeed = .5;
 let FOV = 60;
 var drawv = 1;
-// proj
 let projd = 5;
 const projscale = 600;
+
+// keys
+var epressed = 0;
 
 // init
 function init() {
     canvas.focus();
+    addselect = [];
+    vertices = []; edges = [];
     readfile("./assets/cube.obj");
     projd = 5;
     xangle = 0;yangle = 0;
     xanglev = 0; yanglev = 0;
 }
 init();
-
-// Add mode
-let addselect = [];
 
 let moused = 0;
 let mousebutton = 0;
@@ -57,7 +61,7 @@ canvas.addEventListener("mousedown", (event) => {
     mousex = scaleX*(event.clientX-rect.left); mousey = scaleY*(event.clientY-rect.top);
 })
 canvas.addEventListener("mouseup", (event) => {
-    mousebutton = event.button;
+    mousebutton = null;
     moused = 0;
     mousex = scaleX*(event.clientX-rect.left); mousey = scaleY*(event.clientY-rect.top);
 })
@@ -70,67 +74,89 @@ canvas.addEventListener("mousestop", ()=> {
 })
 canvas.addEventListener("wheel", (event)=> {
     scroll = event.deltaY;
-    textout = scroll;
+    //textout = scroll;
 
     scrolltimeout = setTimeout(()=>{
         scroll = 0;
-        textout = scroll;
+        //textout = scroll;
     }, 80);
 })
 canvas.addEventListener("keydown", (event) => {
-    if(intmode=="add") {
-        addmode(event);
-    } else {
-        if(event.key=="Enter") {
-            let a = submit();
-            if(commandhist[commandhist.length-1]!=ctext) {
-                commandhist.push(ctext);
-                histpos = 0;
-            }
-        } else if(event.key=="Backspace") {
-            ctext= ctext.slice(0, -1);
-        } else if(event.key=="Escape") {
-            ctext="";
-        } else if(event.key=="ArrowUp") {
-            if(commandhist.length>1) {
-                if(histpos<commandhist.length) {
-                    histpos++;
-                }
-                ctext = commandhist[commandhist.length-histpos];
-            }
-        } else if(event.key=="Alt") {
-            mousebutton=1;
-            moused=1;
-        } else if(event.key=="ArrowDown") {
-            if(histpos>0) {
-                histpos--;
-            }
-            if(histpos==0) {
-                ctext = "";
-            } else {
-                ctext = commandhist[commandhist.length-histpos];
-            }
-        } else if(intmode!="add") {
-            if(event.key.length==1) {
-                ctext+=event.key;
-            }
-        }
+    if(event.key=="Control") {
+        control = 1;
+    }
+    if(event.key=="e" && intmode!="normal") {
+        epressed = 1;
+    }
+    processinput(event);
+})
+canvas.addEventListener("keyup", (event) => {
+    if(event.key="Control") {
+        control = 0;
+    }
+    if(event.key=="e") {
+        epressed = 0;
     }
 })
 textinput.addEventListener("keydown", function (event) {
-    if(event.key=="Enter") {
+    if(event.key=="Enter" && intmode=="normal") {
         const text = textinput.value;
         textinput.value = "";
         read(text);
     }
 })
+function processinput(event) {
+    if(event.key=="Escape") {
+        addselect=structuredClone([]);
+    }
+    if(intmode=="normal") {
+        normalmode(event);
+    } else if(intmode=="interact") {
+        interactmode(event);
+    }
+}
 
-function addmode(event) {
+function normalmode(event) {
+    if(event.key=="Enter") {
+        let a = submit();
+        if(commandhist[commandhist.length-1]!=ctext) {
+            commandhist.push(ctext);
+            histpos = 0;
+        }
+    } else if(event.key=="Backspace") {
+        ctext= ctext.slice(0, -1);
+    } else if(event.key=="Escape") {
+        ctext="";
+    } else if(event.key=="ArrowUp") {
+        if(commandhist.length>1) {
+            if(histpos<commandhist.length) {
+                histpos++;
+            }
+            ctext = commandhist[commandhist.length-histpos];
+        }
+    } else if(event.key=="Alt") {
+        // no mouse settings
+        mousebutton=1;
+        moused=1;
+    } else if(event.key=="ArrowDown") {
+        if(histpos>0) {
+            histpos--;
+        }
+        if(histpos==0) {
+            ctext = "";
+        } else {
+            ctext = commandhist[commandhist.length-histpos];
+        }
+    } else {
+        if(event.key.length==1) {
+            ctext+=event.key;
+        }
+    }
+}
+
+function interactmode(event) {
     if(event.key=="n") {
         intmode="normal";
-        addselect[0] = null; addselect[1] = null;
-    } else if(event.key=="m") {
-        intmode="movev";
         addselect[0] = null; addselect[1] = null;
     } else if(event.key=="a") {
         // add point in the middle of the addselected
@@ -148,55 +174,68 @@ function addmode(event) {
     } else if(event.key=="c") {
         // connect addselected
         if(addselect[0]!=null && addselect[1]!=null) {
-            edges[edges.length] = [addselect[0],addselect[1]];
-            addselect[0]=null; addselect[1]=null;
+            edges.push(addselect);
+            addselect=[];
         }
-    } else if(event.key="x") {
+    } else if(event.key=="x") {
         // cut addselected
-        if(addselect[0]!=null && addselect[1]!=null) {
-            for(let i = 0; i < edges.length; i++) {
-                if(edges[i][0]==addselect[0] && edges[i][1]==addselect[1]) {
-                    edges.splice(addselect, 1);
-                    addselect[0]=null; addselect[1]=null;
-                } else if(edges[i][0]==addselect[1]&&edges[i][1]==addselect[0]) {
-                    edges.splice([addselect[1], addselect[0]], 1);
-                    addselect[0]=null; addselect[1]=null;
+        if(addselect.length==2) {
+            if(addselect[0]!=null && addselect[1]!=null) {
+                for(let i = 0; i < edges.length; i++) {
+                    if(edges[i][0]==addselect[0] && edges[i][1]==addselect[1]) {
+                        edges.splice(i, 1);
+                        addselect = [];
+                    } else if(edges[i][0]==addselect[1]&&edges[i][1]==addselect[0]) {
+                        edges.splice(i, 1);
+                        addselect=[];
+                    }
+                }
+            }
+        } else {
+            addselect= [];
+        }
+    }  else if(event.key=="r") {
+        // remove addselected
+        for(let i = 0; i < addselect.length; i++) {
+            for(let j = 0; j < addselect.length; j++) {
+                if(edges[j][0]==addselect[i]) {
+                    edges[j] = [];
+                } else if(edges[j][1]==addselect[i]) {
+                    edges[j] = [];
                 }
             }
         }
-    } else if(event.key=="Escape") {
-        addselect[0] = null; addselect[1] = null;
-    } else if(event.key=="Backspace") {
-        if(addselect[1]!=null) {
-            addselect[1]=null;
-        } else if(addselect[0]!=null) {
-            addselect[0] = null; addselect[1] = null;
+        console.log(edges);
+        let f= 0;
+        for(let i = 0; i< 1000; i++) {
+            if(edges[i]===undefined || edges[i].length==0) {
+                edges.splice(f,1);
+                f+=1;
+            }
+            if(f==edges.length) {
+                break;
+            }
         }
+        console.log(edges);
+
+        for(let i = 0; i < addselect.length; i++) {
+            vertices[addselect[i]]=[];
+        }
+        let n = 0;
+        for(let i = 0; i < 1000; i++) {
+            if(vertices[n].length==0) {
+                vertices.splice(n,1);
+            } else {
+                n+=1;
+            }
+            if(n==vertices.length) {
+                break;
+            }
+        }
+        addselect=[];
+    } else if(event.key=="Backspace") {
+        addselect.splice(addselect.length-1,1);
     }
-}
-
-function project(point) {
-    let zOffset = point[2] + projd;
-
-    return [projscale*point[0]/FOV/zOffset, projscale*point[1]/FOV/zOffset, zOffset];
-}
-function rotate(p, anglex, angley) {
-    var rotated = structuredClone(p);
-    
-    const cosy = Math.cos(angley);
-    const siny = Math.sin(angley);
-    const x1 = rotated[0]*cosy - rotated[2]*siny;
-    const z1 = rotated[0]*siny + rotated[2]*cosy;
-    rotated[0] = x1;
-    rotated[2] = z1;
-
-    const cosx = Math.cos(anglex);
-    const sinx = Math.sin(anglex);
-    const y2 = rotated[1]*cosx - rotated[2]*sinx;
-    const z2 = rotated[1]*sinx + rotated[2]*cosx;
-    rotated[1] = y2;
-    rotated[2] = z2;
-    return rotated;
 }
 
 setupcom();
@@ -213,20 +252,15 @@ function setupcom() {
 function submit() {
     // word check
     if(ctext[0]==":") {
-        if(ctext==":add") {
-            intmode = "add";
+        if(ctext==":interact") {
+            intmode = "interact";
             ctext = "";
-            return "add";
+            return "interact";
         }
         if(ctext==":normal") {
             intmode = "normal";
             ctext = "";
             return "normal";
-        }
-        if(ctext==":movev") {
-            intmode = "movev";
-            ctext = "";
-            return "movev";
         }
     }
     if(ctext[0]=="?") {
@@ -303,8 +337,6 @@ function read(text) {
     if(edges) {
         edlen = edges.length;
     }
-    console.log("edges1");
-    console.log(edges);
     for(let i = 0; i < text.length; i++) {
         if(text[i]=="v") {
             mode = "v";
@@ -397,12 +429,16 @@ function render() {
             // Draw vertices
             if(drawv==1) {
                 for(let i = 0; i < projp.length; i++) {
-                    if(addselect) {
-                        if(i==addselect[0] || i==addselect[1]) {
-                            ctx.fillStyle="blue";
-                        } else {
-                            ctx.fillStyle="red";
+                    let iscaught=0;
+                    for(let j = 0; j < addselect.length; j++) {
+                        if(addselect[j]==i) {
+                            iscaught=1;
                         }
+                    }
+                    if(iscaught==0) {
+                        ctx.fillStyle = "red";
+                    } else if(iscaught==1) {
+                        ctx.fillStyle="blue";
                     }
                     
                     const p1 = projp[i];
@@ -411,10 +447,6 @@ function render() {
                     }
                 }
             }
-            
-            //caughtest
-            let pt = project(caughtest);
-            ctx.fillRect(canvas.width/2+scale*pt[0]-vertexpsize/2, canvas.height/2+scale*pt[1]-vertexpsize/2, vertexpsize, vertexpsize);
         }
     }
 
@@ -482,12 +514,13 @@ function update(deltaTime) {
     // Check for pointer-vertex collision and react accordingly
     if(moused==1 && mousebutton==0) {
         if(caught==null) {
+            // determine caught
             for(let i = 0; i < projp.length; i++) {
                 p = {x:canvas.width/2+scale*projp[i][0],y:canvas.height/2+scale*projp[i][1]};
                 if((mousex>p.x-vertexpsize/2 && mousex<p.x+vertexpsize/2) && (mousey>p.y-vertexpsize/2 && mousey<p.y+vertexpsize/2)) {
                     caught = i;
                     if(intmode!="normal") {
-                        textout = "selected "+caught;
+                        //textout = "selected "+caught;
                     }
                 }
             }
@@ -495,34 +528,58 @@ function update(deltaTime) {
             if(caughtx== null || caughty==null || caughtz==null) {
                 caughtx = vertices[caught][0]; caughty= vertices[caught][1]; caughtz = vertices[caught][2];
             }
-            if(caughtatx==null || caughtaty==null) {
+            if(caughtatx==null||caughtaty==null) {
                 caughtatx = mousex;caughtaty= mousey;
             }
-            if(intmode=="movev") {
+            // movepoint
+            if(intmode=="interact" && epressed==1) {
                 movepoint(caught);
-            } else if(intmode=="add") {
-                if(addselect[0]==null && addselect[1]==null) {
-                    addselect[0] = caught;
-                } else if(addselect[0]==null && addselect[1]==null) {
-
-                } else if(addselect[0]==null && addselect[1]!=null) {
-
-                } else if(addselect[0]!=null && addselect[1]==null) {
-                    addselect[1] = caught;
-                } else if(addselect[0]!=null && addselect[1]!=null) {
-                    addselect[1] = caught;
-                }
             }
         }
-    } else {
-        caught = null;
-        caughtx = null; caughty = null; caughtz = null;
-        caughtatx = null; caughtaty = null;
+    } else if(control==1 && moused==0) {
+        //add to addselect
+        if(caught!=null) {
+            let iscaught = 0;
+            for(let i = 0; i < addselect.length; i++) {
+                if(addselect[i]==caught) {
+                    iscaught=1;
+                }
+            }
+            if(iscaught==1) {
+                addselect.splice(caught, 1);
+            } else {
+                addselect.push(caught);
+            }
+            
+            caught=null;
+            caughtx=null;caughty=null;caughtz=null;
+            caughtatx=null;caughtay=null;
+        }
+    } else if(moused==0) {
+        if(deltacaught!=null) {
+            for(let i = 0; i<addselect.length; i++) {
+                if(caught!=i) {
+                    vertices[addselect[i]][0] = Number(vertices[addselect[i]][0])+Number(deltacaught[0]);
+                    vertices[addselect[i]][1] = Number(vertices[addselect[i]][1])+Number(deltacaught[1]);
+                    vertices[addselect[i]][2] = Number(vertices[addselect[i]][2])+Number(deltacaught[2]);
+                    console.log(vertices[i]);
+                }
+            }
+            console.log(deltacaught);
+        }
+        deltacaught=null;
+        caught=null;
+        caughtx=null;caughty=null;caughtz=null;
+        caughtatx=null;caughtaty=null;
     }
+    if(caught!=null) {
+        
+    }
+    textout = deltacaught;
 }
 
 let caughtx=null, caughty=null, caughtz=null;
-let caughtest = [];
+let deltacaught = null;
 // TODO angles dont work correctly
 function movepoint(index) {
     xanglev = 0; yanglev= 0;
@@ -542,9 +599,14 @@ function movepoint(index) {
     zrf = zr;
     
     let pgf = rotate([xrf, yrf, zrf], -xangle, -yangle);
-    //caughtest = [xrf, yrf, zrf];
     //console.log("xgf:"+pgf[0]+", ygf:"+pgf[1]+", zgf:"+pgf[2]+"; xrf:"+xrf+", yrf:"+yrf+", zrf:"+zrf);
     vertices[index] = structuredClone(pgf);
+    // move other points
+    deltacaught = [];
+    for(let i = 0; i< 3;i++) {
+        deltacaught[i] = pgf[i]-pg[i];
+    }
+    //console.log("caught:"+caught+"; caughtpos:"+[caughtx, caughty, caughtz]+"; prf:"+[xrf,yrf,zrf]+"; caughtat:"+[caughtatx, caughtaty]);
 }
 
 //createsphere();
@@ -561,7 +623,7 @@ function createsphere() {
         y = Math.sin(beta)*Math.sin(2*Math.PI*beta)*r;
         z = Math.cos(beta)*r;
         vertices[i] = [x, y, z];
-        console.log(vertices[i]);
+        //(vertices[i]);
     }
     for(let i = 0; i < res-1; i++) {
         edges[i] = [vertices[i], vertices[i+1]];
@@ -592,6 +654,32 @@ function ccld(vres, cres, height, r) {
             }
         }
     }
+}
+
+// Project
+function project(point) {
+    let zOffset = point[2] + projd;
+
+    return [projscale*point[0]/FOV/zOffset, projscale*point[1]/FOV/zOffset, zOffset];
+}
+// Rotate
+function rotate(p, anglex, angley) {
+    var rotated = structuredClone(p);
+    
+    const cosy = Math.cos(angley);
+    const siny = Math.sin(angley);
+    const x1 = rotated[0]*cosy - rotated[2]*siny;
+    const z1 = rotated[0]*siny + rotated[2]*cosy;
+    rotated[0] = x1;
+    rotated[2] = z1;
+
+    const cosx = Math.cos(anglex);
+    const sinx = Math.sin(anglex);
+    const y2 = rotated[1]*cosx - rotated[2]*sinx;
+    const z2 = rotated[1]*sinx + rotated[2]*cosx;
+    rotated[1] = y2;
+    rotated[2] = z2;
+    return rotated;
 }
 
 requestAnimationFrame((timestamp) => {
