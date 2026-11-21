@@ -153,9 +153,12 @@ textinput.addEventListener("keydown", function (event) {
     }
 })
 function sel(index) {
+    if(index>=vertices.length) {
+        return 0;
+    }
     for(let i = 0; i <addselect.length;i++) {
-        if(index==i) {
-            addselect.splice(index, 1);
+        if(index==addselect[i]) {
+            addselect.splice(i, 1);
             return 0;
         }
     }
