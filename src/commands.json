@@ -60,9 +60,14 @@
         "ex": "drawv=-drawv; ctext=''"
     },
     {
-        "name":"create cilinder",
+        "name":"generate cilinder",
         "cond": "ctext==':ccld'",
         "ex":"ccld(30,30,2,2/3); ctext=''"
+    },
+    {
+        "name":"generate sphere",
+        "cond": "ctext==':gsphere'",
+        "ex":"gensphere(1, 100, 20); drawv+=-1; ctext=''"
     },
     {
         "name":":d",
@@ -78,5 +83,15 @@
         "name":":interact",
         "cond":"ctext==':i'",
         "ex":"intmode='interact';ctext=''"
+    },
+    {
+        "name": "generate circunference",
+        "cond":"ctext==':circle'",
+        "ex": "ccld(30,30,0,1);;ctext=''"
+    },
+    {
+        "name": "show/hide index",
+        "cond":"ctext==':showi'",
+        "ex":"showind*=-1;ctext=''"
     }
 ]

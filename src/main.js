@@ -22,7 +22,9 @@ const writebutton = document.getElementById("writebutton");
 const textinput = document.getElementById("textinput");
 
 // Settings
-let intmode = "interact";
+let theme = 0;
+let intmode = "normal";
+let showind = -1;
 let xangle = 0; let yangle = 0;
 let xanglev = 0; let yanglev = 0;
 let rotationspeed = .5;
@@ -36,10 +38,18 @@ var epressed = 0;
 
 // init
 function init() {
+    if(theme==0) {
+        document.body.style.backgroundColor = "black";
+    } else if(theme==1) {
+        document.body.style.backgroundColor = "white";
+    }
     canvas.focus();
     addselect = [];
     vertices = []; edges = [];
-    readfile("./assets/cube.obj");
+    //readfile("./assets/cube.obj");
+    readfile("./assets/tcube.obj")
+    //ccld(30,30,0,1);
+    //gensphere(1, 100, 24);
     projd = 5;
     xangle = 0;yangle = 0;
     xanglev = 0; yanglev = 0;
@@ -155,86 +165,103 @@ function normalmode(event) {
 }
 
 function interactmode(event) {
-    if(event.key=="n") {
-        intmode="normal";
-        addselect[0] = null; addselect[1] = null;
-    } else if(event.key=="a") {
-        // add point in the middle of the addselected
-        if(addselect[0]!=null && addselect[1]!=null) {
-            let p = [];
-            p[0] = 1/2*(Number(vertices[addselect[0]][0]) + Number(vertices[addselect[1]][0]));
-            p[1] = 1/2*(Number(vertices[addselect[0]][1]) + Number(vertices[addselect[1]][1]));
-            p[2] = 1/2*(Number(vertices[addselect[0]][2]) + Number(vertices[addselect[1]][2]));
-            let index = vertices.length;
-            vertices[index] = structuredClone(p);
-            edges[edges.length] = [addselect[0], index];
-            edges[edges.length] = [addselect[1], index];
-            addselect[0]=null; addselect[1]=null;
-        }
-    } else if(event.key=="c") {
-        // connect addselected
-        if(addselect[0]!=null && addselect[1]!=null) {
-            edges.push(addselect);
-            addselect=[];
-        }
-    } else if(event.key=="x") {
-        // cut addselected
-        if(addselect.length==2) {
+    if(control==0) {    
+        if(event.key=="n") {
+            intmode="normal";
+            addselect[0] = null; addselect[1] = null;
+        } else if(event.key=="a") {
+            // add point in the middle of the addselected
             if(addselect[0]!=null && addselect[1]!=null) {
-                for(let i = 0; i < edges.length; i++) {
-                    if(edges[i][0]==addselect[0] && edges[i][1]==addselect[1]) {
-                        edges.splice(i, 1);
-                        addselect = [];
-                    } else if(edges[i][0]==addselect[1]&&edges[i][1]==addselect[0]) {
-                        edges.splice(i, 1);
-                        addselect=[];
+                let p = [];
+                p[0] = 1/2*(Number(vertices[addselect[0]][0]) + Number(vertices[addselect[1]][0]));
+                p[1] = 1/2*(Number(vertices[addselect[0]][1]) + Number(vertices[addselect[1]][1]));
+                p[2] = 1/2*(Number(vertices[addselect[0]][2]) + Number(vertices[addselect[1]][2]));
+                let index = vertices.length;
+                vertices[index] = structuredClone(p);
+                edges[edges.length] = [addselect[0], index];
+                edges[edges.length] = [addselect[1], index];
+                addselect[0]=null; addselect[1]=null;
+            }
+        } else if(event.key=="c") {
+            // connect addselected
+            if(addselect[0]!=null && addselect[1]!=null) {
+                edges.push(addselect);
+                addselect=[];
+            }
+        } else if(event.key=="x") {
+            // cut addselected
+            if(addselect.length==2) {
+                if(addselect[0]!=null && addselect[1]!=null) {
+                    for(let i = 0; i < edges.length; i++) {
+                        if(edges[i][0]==addselect[0] && edges[i][1]==addselect[1]) {
+                            edges.splice(i, 1);
+                            addselect = [];
+                        } else if(edges[i][0]==addselect[1]&&edges[i][1]==addselect[0]) {
+                            edges.splice(i, 1);
+                            addselect=[];
+                        }
+                    }
+                }
+            } else {
+                addselect= [];
+            }
+        }  else if(event.key=="r") {
+            // remove addselected
+            for(let i = 0; i < addselect.length; i++) {
+                for(let j = 0; j < addselect.length; j++) {
+                    if(edges[j][0]==addselect[i]) {
+                        edges[j] = [];
+                    } else if(edges[j][1]==addselect[i]) {
+                        edges[j] = [];
                     }
                 }
             }
-        } else {
-            addselect= [];
-        }
-    }  else if(event.key=="r") {
-        // remove addselected
-        for(let i = 0; i < addselect.length; i++) {
-            for(let j = 0; j < addselect.length; j++) {
-                if(edges[j][0]==addselect[i]) {
-                    edges[j] = [];
-                } else if(edges[j][1]==addselect[i]) {
-                    edges[j] = [];
+            console.log(edges);
+            let f= 0;
+            for(let i = 0; i< 1000; i++) {
+                if(edges[i]===undefined || edges[i].length==0) {
+                    edges.splice(f,1);
+                    f+=1;
+                }
+                if(f==edges.length) {
+                    break;
                 }
             }
-        }
-        console.log(edges);
-        let f= 0;
-        for(let i = 0; i< 1000; i++) {
-            if(edges[i]===undefined || edges[i].length==0) {
-                edges.splice(f,1);
-                f+=1;
-            }
-            if(f==edges.length) {
-                break;
-            }
-        }
-        console.log(edges);
+            console.log(edges);
 
-        for(let i = 0; i < addselect.length; i++) {
-            vertices[addselect[i]]=[];
-        }
-        let n = 0;
-        for(let i = 0; i < 1000; i++) {
-            if(vertices[n].length==0) {
-                vertices.splice(n,1);
-            } else {
-                n+=1;
+            for(let i = 0; i < addselect.length; i++) {
+                vertices[addselect[i]]=[];
             }
-            if(n==vertices.length) {
-                break;
+            let n = 0;
+            for(let i = 0; i < 1000; i++) {
+                if(vertices[n].length==0) {
+                    vertices.splice(n,1);
+                } else {
+                    n+=1;
+                }
+                if(n==vertices.length) {
+                    break;
+                }
             }
+            addselect=[];
+        } else if(event.key=="1") {
+            // top
+            xangle=0;
+            yangle=0;
+        } else if(event.key=="2") {
+            // front
+            xangle=Math.PI/2;
+            yangle=0;
+        } else if(event.key=="Backspace") {
+            addselect.splice(addselect.length-1,1);
         }
-        addselect=[];
-    } else if(event.key=="Backspace") {
-        addselect.splice(addselect.length-1,1);
+    } else if(control==1) {
+        if(key.event=="a") {
+            alert("foif");
+        }
+        if(moused == 1) {
+            textout = "1";
+        }
     }
 }
 
@@ -311,7 +338,9 @@ function download() {
         }
     }
     for(let i = 0; i < edges.length; i++) {
-        text += "\nl " + edges[i][0] + " " + edges[i][1]+" ";
+        for(let j = 0; j < edges[i].length; j++) {
+            text += "\nl " + edges[i][0] + " " + edges[i][1]+" ";
+        }
     }
     element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
     element.setAttribute('download', "objectname.obj");
@@ -415,35 +444,54 @@ function render() {
             }
 
             // Draw edges
+            if(theme==0) {
+                ctx.strokeStyle="white";
+            } else if(theme==1) {
+                ctx.strokeStyle="black";
+            }
             for(let i = 0; i < edges.length; i++) {
-                const p1 = projp[edges[i][0]];
-                const p2 = projp[edges[i][1]];
-                //console.log("i="+i+" p1: "+p1+"; p2: "+p2);
-                
-                if(p1!=null && p2!=null) {
-                    ctx.moveTo(canvas.width/2+scale*p1[0], canvas.height/2+scale*p1[1]);
-                    ctx.lineTo(canvas.width/2+scale*p2[0], canvas.height/2+scale*p2[1]);
+                for(let j = 0; j <edges[i].length;j++) {
+                    if(j+1<edges[i].length) {
+                        const p1 = projp[edges[i][j]];
+                        const p2 = projp[edges[i][j+1]];
+                        if(p1!=null && p2!=null) {
+                            ctx.moveTo(canvas.width/2+scale*p1[0], canvas.height/2+scale*p1[1]);
+                            ctx.lineTo(canvas.width/2+scale*p2[0], canvas.height/2+scale*p2[1]);
+                        }
+                    } else if(j+1==edges[i].length){
+                        const p1 = projp[edges[i][j]];
+                        const p2 = projp[edges[i][0]];
+                        if(p1!=null && p2!=null) {
+                            ctx.moveTo(canvas.width/2+scale*p1[0], canvas.height/2+scale*p1[1]);
+                            ctx.lineTo(canvas.width/2+scale*p2[0], canvas.height/2+scale*p2[1]);
+                        }
+                    }
                 }
+                //console.log("i="+i+" p1: "+p1+"; p2: "+p2);
             }
 
             // Draw vertices
-            if(drawv==1) {
-                for(let i = 0; i < projp.length; i++) {
-                    let iscaught=0;
-                    for(let j = 0; j < addselect.length; j++) {
-                        if(addselect[j]==i) {
-                            iscaught=1;
-                        }
+            for(let i = 0; i < projp.length; i++) {
+                let iscaught=0;
+                for(let j = 0; j < addselect.length; j++) {
+                    if(addselect[j]==i) {
+                        iscaught=1;
                     }
-                    if(iscaught==0) {
-                        ctx.fillStyle = "red";
-                    } else if(iscaught==1) {
-                        ctx.fillStyle="blue";
-                    }
-                    
-                    const p1 = projp[i];
-                    if(p1!=null) {
+                }
+                if(iscaught==0) {
+                    ctx.fillStyle = "red";
+                } else if(iscaught==1) {
+                    ctx.fillStyle="blue";
+                }
+                
+                const p1 = projp[i];
+                if(p1!=null) {
+                    if(drawv==1) {
                         ctx.fillRect(canvas.width/2+scale*p1[0] - vertexpsize/2, canvas.height/2+scale*p1[1] - vertexpsize/2, vertexpsize, vertexpsize);
+                    }
+                    // render text displaying the index of a vertex above said vertex
+                    if(showind==1) {
+                        ctx.fillText(i, canvas.width/2+scale*p1[0], canvas.height/2+scale*p1[1], vertexpsize, vertexpsize);
                     }
                 }
             }
@@ -451,25 +499,26 @@ function render() {
     }
 
     // render text
+    if(theme==0) {
+        ctx.fillStyle="white";
+    } else if(theme==1) {
+        ctx.fillStyle="black";
+    }
     let fontsize1 = .03*canvas.height;
     let fontsize2 = .09*canvas.height;
-    ctx.fillStyle="black"
     ctx.font=fontsize1+"px serif";
     ctx.fillText(intmode, canvas.width/2 - ctx.measureText(intmode).width/2, fontsize1);
 
     // render textlist
-    ctx.fillStyle="black";
     ctx.font=fontsize1+"px serif";
     for(let i = 0; i < textlist.length; i++) {
         ctx.fillText(textlist, canvas.width-ctext.measureText(textlist), fontsize1*i);
     }
 
     // render textout
-    ctx.fillStyle="black";
     ctx.font=fontsize1+"px serif";
     ctx.fillText(textout, canvas.width/2 - ctx.measureText(textout).width/2, canvas.height-fontsize1);
     // render ctext
-    ctx.fillStyle="black";
     ctx.font = fontsize2+"px serif";
     ctx.fillText(ctext, canvas.width/2 - ctx.measureText(ctext).width/2, canvas.height/2);
     ctx.stroke();
@@ -495,9 +544,9 @@ function update(deltaTime) {
     xangle%=Math.PI*2;
     yangle%=Math.PI*2;
 
-    // rotate object
+    // manually rotate object
     if(mousebutton==1 && moused==1) {
-        let deltamousef = .00007*canvas.height;
+        let deltamousef = .00004*canvas.height;
         xangle+=deltamousey*deltamousef;
         if(xangle%2*Math.PI<Math.PI) {
             yangle+=deltamousex*deltamousef;
@@ -506,6 +555,13 @@ function update(deltaTime) {
             yangle+=-deltamousex*deltamousef;
             //textout = "case 2:"+deltamousex+", "+deltamousey;
         }
+        textout = "";
+    }
+    // check if on specific view angle
+    if(xangle==0&&yangle==0) {
+        textout="front";
+    } else if(xangle==Math.PI/2&&yangle==0) {
+        textout="top";
     }
 
     // set distance
@@ -550,22 +606,24 @@ function update(deltaTime) {
             } else {
                 addselect.push(caught);
             }
-            
             caught=null;
             caughtx=null;caughty=null;caughtz=null;
             caughtatx=null;caughtay=null;
         }
     } else if(moused==0) {
         if(deltacaught!=null) {
+            vertices[caught]=[caughtx, caughty, caughtz];
+            console.log(deltacaught);
+            console.log(caught);
+            console.log(vertices[caught]);
+            console.log(addselect);
             for(let i = 0; i<addselect.length; i++) {
-                if(caught!=i) {
+                if(vertices[addselect[i]]) {
                     vertices[addselect[i]][0] = Number(vertices[addselect[i]][0])+Number(deltacaught[0]);
                     vertices[addselect[i]][1] = Number(vertices[addselect[i]][1])+Number(deltacaught[1]);
                     vertices[addselect[i]][2] = Number(vertices[addselect[i]][2])+Number(deltacaught[2]);
-                    console.log(vertices[i]);
                 }
             }
-            console.log(deltacaught);
         }
         deltacaught=null;
         caught=null;
@@ -575,7 +633,7 @@ function update(deltaTime) {
     if(caught!=null) {
         
     }
-    textout = deltacaught;
+    //textout = caught;
 }
 
 let caughtx=null, caughty=null, caughtz=null;
@@ -609,28 +667,27 @@ function movepoint(index) {
     //console.log("caught:"+caught+"; caughtpos:"+[caughtx, caughty, caughtz]+"; prf:"+[xrf,yrf,zrf]+"; caughtat:"+[caughtatx, caughtaty]);
 }
 
-//createsphere();
-function createsphere() {
-    let res = 1000;
-    let r = 1;
-    let rot = 30.1;
-    edges = structuredClone([]);
+function gensphere(r, res, res2) { //res2 = 20
     vertices = structuredClone([]);
+    edges = structuredClone([]);
+
     for(let i = 0; i < res; i++) {
-        let beta = i*2*Math.PI/res;
-        let x,y,z;
-        x = Math.sin(beta)*Math.cos(2*Math.PI*beta)*r;
-        y = Math.sin(beta)*Math.sin(2*Math.PI*beta)*r;
-        z = Math.cos(beta)*r;
+        let theta = i/res*Math.PI;
+        let theta2 = i/res*Math.PI*res2;
+        let y = r*Math.cos(theta);
+        let x = r*Math.sin(theta)*Math.cos(theta2);
+        let z = r*Math.sin(theta)*Math.sin(theta2);
         vertices[i] = [x, y, z];
-        //(vertices[i]);
-    }
-    for(let i = 0; i < res-1; i++) {
-        edges[i] = [vertices[i], vertices[i+1]];
+        if(i+1<res) {
+            if(i+res2<res) {
+                edges[i] = [i, i+1, i+res2];
+                console.log(edges[i]);
+            }
+        }
     }
 }
 
-function ccld(vres, cres, height, r) {
+function ccld(vres, cres, height, r) { // 30, 30, 2, 2/3
     vertices=structuredClone([]);
     edges = structuredClone([]);
     vertices[cres*cres] = [0, -height/2, 0];
