@@ -82,7 +82,7 @@
         "name": "./[file]",
         "cond": "ctext.slice(0,2)=='./'",
         "ex": "readfile('./assets/'+ctext.slice(2));ctext=''",
-        "desc":"open file"
+        "desc":"Open file"
     },
     {
         "name": ":xrot",
@@ -136,7 +136,7 @@
         "name": ":circle",
         "cond":"ctext==':circle'",
         "ex": "ccld(30,30,0,1);;ctext=''",
-        "desc":"generate circunference"
+        "desc":"Generate circunference"
     },
     {
         "name": ":showi",
