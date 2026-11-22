@@ -63,7 +63,7 @@
     {
         "name": "dx=",
         "cond": "ctext.slice(0, 3)=='dx='",
-        "ex": "deltacaught=[];deltacaught=[-ctext.slice(3), 0, 0];ctext=''",
+        "ex": "deltacaught=[];deltacaught=[ctext.slice(3), 0, 0];ctext=''",
         "desc":"Set deltax"
     },
     {
