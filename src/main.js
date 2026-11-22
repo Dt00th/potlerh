@@ -21,6 +21,7 @@ var textlist = [];
 // World
 var vertices = [];
 var edges = [];
+var normalv = [];
 // Interact-variables
 let addselect = [];
 var commandhist = [];
@@ -481,6 +482,10 @@ function read(text) {
             value += text[i];
         }
     }
+
+    //if(normalv==[] || normalv.length==0) {
+    //    makenormal();
+    //}
 }
 
 function readfile(path) {
@@ -511,11 +516,6 @@ function render() {
             for(let i = 0; i < vertices.length; i++) {
                 const rotated = rotate(vertices[i], xangle, yangle);
                 let p = project(rotated);
-                //if(p) {
-                //    if((projd+p[2])>=0) {
-                //        projp[i] = p;
-                //    }
-                //}
                 if(p[2]>=0) {
                     projp[i]=p;
                 } else {
@@ -524,10 +524,11 @@ function render() {
             }
 
             // Draw edges
+            let rendertheme;
             if(theme==0) {
-                ctx.strokeStyle="white";
+                rendertheme="white";
             } else if(theme==1) {
-                ctx.strokeStyle="black";
+                rendertheme="black";
             }
             for(let i = 0; i < edges.length; i++) {
                 for(let j = 0; j <edges[i].length;j++) {
@@ -535,15 +536,33 @@ function render() {
                         const p1 = projp[edges[i][j]];
                         const p2 = projp[edges[i][j+1]];
                         if(p1!=null && p2!=null) {
+                            ctx.beginPath();
+                            ctx.strokeStyle = rendertheme;
                             ctx.moveTo(canvas.width/2+scale*p1[0], canvas.height/2+scale*p1[1]);
                             ctx.lineTo(canvas.width/2+scale*p2[0], canvas.height/2+scale*p2[1]);
+                            ctx.stroke();
                         }
                     } else if(j+1==edges[i].length){
                         const p1 = projp[edges[i][j]];
                         const p2 = projp[edges[i][0]];
                         if(p1!=null && p2!=null) {
+                            ctx.beginPath();
+                            ctx.strokeStyle = rendertheme;
                             ctx.moveTo(canvas.width/2+scale*p1[0], canvas.height/2+scale*p1[1]);
                             ctx.lineTo(canvas.width/2+scale*p2[0], canvas.height/2+scale*p2[1]);
+                            ctx.stroke();
+                        }
+                    }
+                    // render normal vector
+                    if(normalv!=null) {
+                        if(normalv[i]!=null) {
+                            projnormalv = project(rotate(normalv[i], xangle, yangle));
+                            ctx.beginPath();
+                            ctx.strokeStyle = "blue";
+                            ctx.moveTo(canvas.width/2, canvas.height/2);
+                            ctx.lineTo(canvas.width/2+scale*projnormalv[0], canvas.height/2+scale*projnormalv[1]);
+                            ctx.lineWidth=1;
+                            ctx.stroke();
                         }
                     }
                 }
@@ -570,7 +589,7 @@ function render() {
                         ctx.fillRect(canvas.width/2+scale*p1[0] - vertexpsize/2, canvas.height/2+scale*p1[1] - vertexpsize/2, vertexpsize, vertexpsize);
                     }
                     // render text displaying the index of a vertex above said vertex
-                    if(showind==1) {
+                    if(showind==1 || caught==i) {
                         ctx.fillText(i, canvas.width/2+scale*p1[0], canvas.height/2+scale*p1[1], vertexpsize, vertexpsize);
                     }
                 }
@@ -691,7 +710,7 @@ function update(deltaTime) {
             caughtatx=null;caughtaty=null;
         }
     } else if(moused==0) {
-        // move relatice to deltacaught
+        // move relative to deltacaught
         if(deltacaught!=null) {
             vertices[caught]=[caughtx, caughty, caughtz];
             console.log(deltacaught);
@@ -815,6 +834,29 @@ function rotate(p, anglex, angley) {
     rotated[1] = y2;
     rotated[2] = z2;
     return rotated;
+}
+function makenormal() { //TODO fix polarity
+    // p0- edges[0] p1- edges[1] p2- edges[2]
+    for(let i = 0; i< edges.length;i++) {
+        let x0 = vertices[edges[i][0]][0];
+        let y0 = vertices[edges[i][0]][1];
+        let z0 = vertices[edges[i][0]][2];
+        let x1 = vertices[edges[i][1]][0];
+        let y1 = vertices[edges[i][1]][1];
+        let z1 = vertices[edges[i][1]][2];
+        let x2 = vertices[edges[i][2]][0];
+        let y2 = vertices[edges[i][2]][1];
+        let z2 = vertices[edges[i][2]][2];
+        let xf = ((y1-y0)*(z2-z0))-((z1-z0)*(y2-y0));
+        let yf = ((z1-z0)*(x2-x0))-((x1-x0)*(z2-z0));
+        let zf = ((x1-x0)*(y2-y0))-((y1-y0)*(x2-x0));
+        let length = Math.sqrt(xf*xf + yf*yf+ zf*zf);
+        normalv[i] = [xf/length, yf/length, zf/length];
+        //console.log("i: "+i+", vertices: ");
+        //console.log([x0,y0,z0]);
+        //console.log([x1,y1,z1]);
+        //console.log([x2,y2,z2]);
+    }
 }
 
 requestAnimationFrame((timestamp) => {
