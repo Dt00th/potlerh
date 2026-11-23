@@ -34,12 +34,14 @@ let deltacaught = null;
 // Settings
 let theme = 0;
 let intmode = "normal";
+let rendernormalv = -1;
+let renderfaces = -1;
+var drawv = 1;
 let showind = -1;
 let xangle = 0; let yangle = 0;
 let xanglev = 0; let yanglev = 0;
 let rotationspeed = .5;
 let FOV = 60;
-var drawv = 1;
 let projd = 5;
 const projscale = 600;
 let deltamousef = .04;
@@ -68,6 +70,8 @@ function init() {
     //readfile("./assets/cube.obj");
     readfile("./assets/tcube.obj")
     //ccld(30,30,0,1);
+    //ccldt(30, 30, 2, 1)
+    //readfile("./assets/cilinder.obj");
     //gensphere(1, 100, 24);
     projd = 5;
     xangle = 0;yangle = 0;
@@ -170,9 +174,11 @@ function processinput(event) {
         addselect=structuredClone([]);
     }
     if(intmode=="normal") {
-        normalmode(event);
-    } else if(intmode=="interact") {
-        interactmode(event);
+        if(event.key!=" ") {
+            normalmode(event);
+        }
+    } else if(intmode=="manip") {
+        manipmode(event);
     }
 }
 
@@ -214,7 +220,7 @@ function normalmode(event) {
     }
 }
 
-function interactmode(event) {
+function manipmode(event) {
     let deltarotf = 2*deltamousef;
     if(ArrowUp==1) {
         xangle+=deltarotf;
@@ -246,7 +252,7 @@ function interactmode(event) {
         if(event.key==" ") {
             intmode="normal";
             addselect[0] = null; addselect[1] = null;
-        } else if(event.key=="a") {
+        } else if(event.key=="a") { // add
             // add point in the middle of the addselected
             if(addselect[0]!=null && addselect[1]!=null) {
                 let p = [];
@@ -259,13 +265,13 @@ function interactmode(event) {
                 edges[edges.length] = [addselect[1], index];
                 addselect[0]=null; addselect[1]=null;
             }
-        } else if(event.key=="c") {
+        } else if(event.key=="c") { // connect
             // connect addselected
             if(addselect[0]!=null && addselect[1]!=null) {
                 edges.push(addselect);
                 addselect=[];
             }
-        } else if(event.key=="x") {
+        } else if(event.key=="x") { // cut
             // cut addselected
             if(addselect.length==2) {
                 if(addselect[0]!=null && addselect[1]!=null) {
@@ -282,7 +288,7 @@ function interactmode(event) {
             } else {
                 addselect= [];
             }
-        }  else if(event.key=="r") {
+        }  else if(event.key=="r") { // remove
             // remove addselected
             for(let i = 0; i < addselect.length; i++) {
                 for(let j = 0; j < addselect.length; j++) {
@@ -329,7 +335,11 @@ function interactmode(event) {
             // front
             xangle=Math.PI/2;
             yangle=0;
-        } else if(event.key=="Backspace") {
+        } else if(event.key=="3") {
+            // back
+            xangle=0;
+            yangle=Math.PI;
+        }else if(event.key=="Backspace") {
             addselect.splice(addselect.length-1,1);
         }
     } else if(control==1) {
@@ -357,9 +367,9 @@ function submit() {
     // word check
     if(ctext[0]==":") {
         if(ctext==":interact") {
-            intmode = "interact";
+            intmode = "manip";
             ctext = "";
-            return "interact";
+            return "manip";
         }
         if(ctext==":normal") {
             intmode = "normal";
@@ -413,8 +423,9 @@ function submitdownload() {
         }
     }
     for(let i = 0; i < edges.length; i++) {
+        textoutput += "\nl ";
         for(let j = 0; j < edges[i].length; j++) {
-            textoutput += "\nl " + edges[i][0] + " " + edges[i][1]+" ";
+            textoutput += edges[i][j]+" ";
         }
     }
 }
@@ -483,9 +494,7 @@ function read(text) {
         }
     }
 
-    //if(normalv==[] || normalv.length==0) {
-    //    makenormal();
-    //}
+    makenormalv();
 }
 
 function readfile(path) {
@@ -503,6 +512,7 @@ function readfile(path) {
 
 var projp = [];
 let vertexpsize = scale*.3;
+let lnv = [-1, 0, 0];
 function render() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.beginPath();
@@ -516,12 +526,119 @@ function render() {
             for(let i = 0; i < vertices.length; i++) {
                 const rotated = rotate(vertices[i], xangle, yangle);
                 let p = project(rotated);
+                // check if behind camera
                 if(p[2]>=0) {
                     projp[i]=p;
                 } else {
                     projp[i] = null;
                 }
             }
+            // behind check TODO
+            if(renderfaces==2) {
+                for(let i = 0; i< vertices.length; i++) {
+                    let v1 = rotate(vertices[i],xangle,yangle);
+                    let vx = v1[0];
+                    let vy = v1[1];
+                    let vz = v1[2];
+                    for(let j = 0; j <edges.length; j++) {
+                        let exitedg = 0;
+                        //face of point check
+                        for(let k = 0; k<edges[j].length;k++) {
+                            if(edges[j][k]==i) {
+                                exitedg=1;
+                                break;
+                            }
+                        }
+                        if(exitedg==1) {
+                            break;
+                        }
+                        let projmidd = rotate(edgemiddvert[j], xangle,yangle);
+                        let px = projmidd[0];
+                        let py = projmidd[1];
+                        let pz = projmidd[2];
+                        let rx = vx-px;
+                        let ry = vy-py;
+                        let rz = vz-pz;
+                        let d = (rx*normalv[j][0]+ry*normalv[j][1]+rz*normalv[j][2]);
+                        if(d<0) {
+                            //collision check
+                            projp[i]=null;
+                            break;
+                        }
+                        //// collision check
+                        ////det maxx and minxx
+                        //let xminindex = 0, xmaxindex= 0;
+                        //let x0=projp[edges[j][0]][0];
+                        //let x1=projp[edges[j][0]][0];
+                        //for(let k = 1; k< edges[j].length; k++) {
+                        //    if(projp[edges[j][k]][0]<x0) {
+                        //        xminindex=k;
+                        //        x0=projp[edges[j][k]][0];
+                        //    }
+                        //    if(projp[edges[j][k]][0]>x1) {
+                        //        xmaxindex = k;
+                        //        x1=projp[edges[j][k]][0];
+                        //    }
+                        //}
+                        //let otherindex;
+                        //for(let k = 0; k<edges[j].length;k++) {
+                        //    if(xmaxindex!=k&&xminindex!=k) {
+                        //        otherindex = k;
+                        //    }
+                        //}
+                        //let p0 = projp[edges[j][xminindex]];
+                        //let p1 = projp[edges[j][otherindex]];
+                        //let p2 = projp[edges[j][xmaxindex]];
+                        ////det y0, y1, y2
+                        //let y0 = (projp[i][0]-p1[0])*(p1[1]-p2[1])/(p1[0]-p2[0])+p2[1];
+                        //let y1 = (projp[i][0]-p2[0])*(p2[1]-p0[1])/(p2[0]-p0[0])+p0[1];
+                        //let y2 = (projp[i][0]-p1[0])*(p1[1]-p0[1])/(p1[0]-p0[0])+p0[1];
+                        //if(projp[i][0]>x0&&projp[i][0]<x1) {
+                        //    if(projp[i][1]<y2&&projp[i][1]>y1&&projp[i][1]>y0) {
+                        //        projp[i]=null;
+                        //        break;
+                        //    }
+                        //}
+                    }
+                }
+            }
+            // Render with faces
+            if(renderfaces==1&&normalv.length!=0) {
+                // Render faces
+                for(let i = 0; i< edges.length; i++) {
+                    if(normalv[i]!=null) {
+                        let op = 1;
+                        let opx = lnv[0]*normalv[i][0];
+                        let opy = lnv[1]*normalv[i][1];
+                        let opz = lnv[2]*normalv[i][2];
+                        let theta = Math.acos(opx+opy+opz);
+                        op = theta/Math.PI;
+
+                        // Render face
+                        var path = new Path2D();
+                        ctx.beginPath();
+                        ctx.lineWidth=1;
+                        ctx.fillStyle="rgb(255, 0, 0,"+op+")"; // 255, 100, 100
+                        for(let j = 0; j < edges[i].length;j++) {
+                            if(j==0&&projp[edges[i][j]]!=null) {
+                                path.moveTo(canvas.width/2+scale*projp[edges[i][j]][0], canvas.height/2+scale*projp[edges[i][j]][1]);
+                            } else if(projp[edges[i][j]]!=null) {
+                                path.lineTo(canvas.width/2+scale*projp[edges[i][j]][0], canvas.height/2+scale*projp[edges[i][j]][1]);
+                            }
+                        }
+                        ctx.fill(path);
+                    }
+                }
+                // render lnv
+                let projlnv = project(rotate(lnv, xangle, yangle));
+                ctx.beginPath();
+                ctx.strokeStyle="rgb(255, 200, 100)";
+                ctx.lineWidth=6;
+                ctx.moveTo(canvas.width/2,canvas.height/2);
+                ctx.lineTo(canvas.width/2+scale*projlnv[0], canvas.height/2+scale*projlnv[1]);
+                ctx.stroke();
+            }
+            ctx.lineWidth=1;
 
             // Draw edges
             let rendertheme;
@@ -532,6 +649,7 @@ function render() {
             }
             for(let i = 0; i < edges.length; i++) {
                 for(let j = 0; j <edges[i].length;j++) {
+                    // draw edges
                     if(j+1<edges[i].length) {
                         const p1 = projp[edges[i][j]];
                         const p2 = projp[edges[i][j+1]];
@@ -554,21 +672,34 @@ function render() {
                         }
                     }
                     // render normal vector
-                    if(normalv!=null) {
+                    if(rendernormalv==1&&normalv!=null) {
                         if(normalv[i]!=null) {
-                            projnormalv = project(rotate(normalv[i], xangle, yangle));
-                            ctx.beginPath();
-                            ctx.strokeStyle = "blue";
-                            ctx.moveTo(canvas.width/2, canvas.height/2);
-                            ctx.lineTo(canvas.width/2+scale*projnormalv[0], canvas.height/2+scale*projnormalv[1]);
-                            ctx.lineWidth=1;
-                            ctx.stroke();
+                            let pf=[];
+                            let projmidd=project(rotate(edgemiddvert[i],xangle,yangle));
+                            for(let j = 0; j < normalv[i].length;j++){
+                                pf[j] = (Number(edgemiddvert[i][j])+Number(normalv[i][j]));
+                            }
+                            // check if behind camera
+                            let projf = project(rotate(pf, xangle, yangle));
+                            if(pf!=null && projmidd[2]>0 && projf[2]>0) {
+                                // draw line
+                                ctx.beginPath();
+                                ctx.strokeStyle = "blue";
+                                ctx.moveTo(canvas.width/2+scale*projmidd[0], canvas.height/2+scale*projmidd[1]);
+                                ctx.lineTo(canvas.width/2+scale*projf[0], canvas.height/2+scale*projf[1]);
+                                ctx.lineWidth=1;
+                                ctx.stroke();
+
+                                // draw line end
+                                let jod = vertexpsize/3;
+                                ctx.fillStyle="blue";
+                                ctx.fillRect(canvas.width/2+scale*projf[0]-jod/2, canvas.height/2+scale*projf[1]-jod/2, jod, jod);
+                            }
                         }
                     }
                 }
                 //console.log("i="+i+" p1: "+p1+"; p2: "+p2);
             }
-
             // Draw vertices
             for(let i = 0; i < projp.length; i++) {
                 let iscaught=0;
@@ -585,7 +716,7 @@ function render() {
                 
                 const p1 = projp[i];
                 if(p1!=null) {
-                    if(drawv==1) {
+                    if((drawv==1 && renderfaces==-1)||addselect.includes(i)) {
                         ctx.fillRect(canvas.width/2+scale*p1[0] - vertexpsize/2, canvas.height/2+scale*p1[1] - vertexpsize/2, vertexpsize, vertexpsize);
                     }
                     // render text displaying the index of a vertex above said vertex
@@ -643,6 +774,7 @@ function update(deltaTime) {
     yangle += yanglev*deltaTime;
     xangle%=Math.PI*2;
     yangle%=Math.PI*2;
+    textout = "";
 
     // manually rotate object
     if(mousebutton==1 && moused==1) {
@@ -654,13 +786,14 @@ function update(deltaTime) {
             yangle+=-deltamousex*deltamousef;
             //textout = "case 2:"+deltamousex+", "+deltamousey;
         }
-        textout = "";
     }
     // check if on specific view angle
     if(xangle==0&&yangle==0) {
         textout="front";
-    } else if(xangle==Math.PI/2&&yangle==0) {
+    } else if(xangle==Math.PI/2) {
         textout="top";
+    } else if(yangle==Math.PI&&xangle==0) {
+        textout="back";
     }
 
     // set distance
@@ -671,11 +804,13 @@ function update(deltaTime) {
         if(caught==null) {
             // determine caught
             for(let i = 0; i < projp.length; i++) {
-                p = {x:canvas.width/2+scale*projp[i][0],y:canvas.height/2+scale*projp[i][1]};
-                if((mousex>p.x-vertexpsize/2 && mousex<p.x+vertexpsize/2) && (mousey>p.y-vertexpsize/2 && mousey<p.y+vertexpsize/2)) {
-                    caught = i;
-                    if(intmode!="normal") {
-                        //textout = "selected "+caught;
+                if(projp[i]!=null) {
+                    p = {x:canvas.width/2+scale*projp[i][0],y:canvas.height/2+scale*projp[i][1]};
+                    if((mousex>p.x-vertexpsize/2 && mousex<p.x+vertexpsize/2) && (mousey>p.y-vertexpsize/2 && mousey<p.y+vertexpsize/2)) {
+                        caught = i;
+                        if(intmode!="normal") {
+                            //textout = "selected "+caught;
+                        }
                     }
                 }
             }
@@ -687,7 +822,7 @@ function update(deltaTime) {
                 caughtatx = mousex;caughtaty= mousey;
             }
             // movepoint
-            if(intmode=="interact" && epressed==1) {
+            if(intmode=="manip" && epressed==1) {
                 movepoint(caught);
             }
         }
@@ -713,8 +848,8 @@ function update(deltaTime) {
         // move relative to deltacaught
         if(deltacaught!=null) {
             vertices[caught]=[caughtx, caughty, caughtz];
-            console.log(deltacaught);
-            console.log(vertices[addselect[0]]);
+            //console.log(deltacaught);
+            //console.log(vertices[addselect[0]]);
             textout=addselect[0];
             for(let i = 0; i<addselect.length; i++) {
                 if(vertices[addselect[i]]&&deltacaught.length==3) {
@@ -810,6 +945,35 @@ function ccld(vres, cres, height, r) { // 30, 30, 2, 2/3
     }
 }
 
+function ccldt(vres, cres, height, r) { // 30, 30, 2, 2/3
+    // edges[i][j%3]
+    drawv=-1;
+    vertices=structuredClone([]);
+    edges = structuredClone([]);
+    let center = (vres)*(cres);
+    vertices[center] = [0, -height/2, 0];
+    vertices[center+1] = [0, height/2, 0];
+    for(let i = 0; i < vres; i++) {
+        let y = i/vres*height-height/2;
+        for(let j = 0; j < cres; j++) {
+            let theta = j/cres*2*Math.PI;
+            let x = Math.cos(theta)*r;
+            let z = Math.sin(theta)*r;
+            vertices[i*cres+j] = [x, y, z];
+            if(i+1<vres) {
+                edges[i*cres+j] = [i*cres+j, (i*cres+(j+1)%cres), (i+1)*cres+(j+1)%cres];
+            }
+            if(i==0&&j+1<cres){
+                edges[vres*cres-vres+j]=[center, j, j+1&cres];
+            }
+            if(i==1&&j+1<cres) {
+                edges[vres*cres-vres+cres*i+j-1]=[center+1, (vres-1)*cres+j, (vres-1)*cres+j+1];
+            }
+        }
+    }
+    edges[cres*vres+cres-2]=[center+1, cres*vres-1, cres*vres-cres];
+}
+
 // Project
 function project(point) {
     let zOffset = point[2] + projd;
@@ -835,8 +999,22 @@ function rotate(p, anglex, angley) {
     rotated[2] = z2;
     return rotated;
 }
-function makenormal() { //TODO fix polarity
+let edgemiddvert = [];
+function makenormalv() { //TODO fix polarity
     // p0- edges[0] p1- edges[1] p2- edges[2]
+    normalv=[];
+    for(let i = 0; i< edges.length; i++) {
+        let p = [0, 0, 0];
+        for(let j = 0; j< edges[i].length;j++) {
+            p[0]+=Number(vertices[edges[i][j]][0]);
+            p[1]+=Number(vertices[edges[i][j]][1]);
+            p[2]+=Number(vertices[edges[i][j]][2]);
+        }
+        for(let j = 0; j< p.length;j++) {
+            p[j] = p[j]/edges[i].length;
+        }
+        edgemiddvert.push(p);
+    }
     for(let i = 0; i< edges.length;i++) {
         let x0 = vertices[edges[i][0]][0];
         let y0 = vertices[edges[i][0]][1];
@@ -852,10 +1030,27 @@ function makenormal() { //TODO fix polarity
         let zf = ((x1-x0)*(y2-y0))-((y1-y0)*(x2-x0));
         let length = Math.sqrt(xf*xf + yf*yf+ zf*zf);
         normalv[i] = [xf/length, yf/length, zf/length];
-        //console.log("i: "+i+", vertices: ");
-        //console.log([x0,y0,z0]);
-        //console.log([x1,y1,z1]);
-        //console.log([x2,y2,z2]);
+        
+        // polarity check
+        let nmid = [];
+        let midlen = 0;
+        for(let j = 0;  j <edgemiddvert[i].length;j++) {
+            midlen+=edgemiddvert[i][j]*edgemiddvert[i][j];
+        }
+        midlen = Math.sqrt(midlen);
+        let newmid = [];
+        for(let j = 0;  j <normalv[i].length;j++) {
+            newmid[j]=edgemiddvert[i][j]+normalv[i][j];
+        }
+        let newmidlen = 0;
+        for(let j = 0;  j <newmid.length;j++) {
+            newmidlen+=newmid[j]*newmid[j];
+        }
+        if(newmidlen<midlen) {
+            for(let j = 0; j<normalv[i].length;j++) {
+                normalv[i][j]*=-1;
+            }
+        }
     }
 }
 
