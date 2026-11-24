@@ -109,9 +109,9 @@
         "desc":"Toggle draw-vertices mode"
     },
     {
-        "name":":ccld",
-        "cond": "ctext==':ccld'",
-        "ex":"ccldt(30,30,2,2/3); ctext=''",
+        "name":":gcld",
+        "cond": "ctext==':gcld'",
+        "ex":"gcld(30,30,2,2/3); ctext=''",
         "desc":"Generate cilinder"
     },
     {
@@ -155,6 +155,18 @@
         "cond":"ctext==':rnv'",
         "ex":"rendernormalv*=-1;ctext=''",
         "desc":"Toggle render-normal-vectors mode"
+    },
+    {
+        "name":":rlv",
+        "cond":"ctext==':rlv'",
+        "ex":"renderlightvector*=-1;ctext=''",
+        "desc":"Toggle render-light-vector mode"
+    },
+    {
+        "name":":rl",
+        "cond":"ctext==':rl'",
+        "ex":"renderlight*=-1;ctext=''",
+        "desc":"Toggle light shading"
     },
     {
         "name":":rf",
