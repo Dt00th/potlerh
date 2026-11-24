@@ -8,8 +8,11 @@ Web page for generating wiremesh obj files
 - download/copy: download the obj file with the download button or copy the text from the second text field
 - read: read the provided text after pressing enter if it is in the correct formatting
 - select: select points by clicking on them while pressing the Ctrl key
+- text input(normal mode): you can type commands and press enter to run them
+- text input(manip mode): you can type certain keys to run the corresponding function
 
-## Functions in interact mode
+## Manip mode
+### Functions in manip mode
 - [space] -- press space to return to normal mode
 - "a" -- press "a" to create a point in the middle of the 2 selected points and connect them to the new point
 - "c" -- press "c" to connect two points
@@ -17,13 +20,14 @@ Web page for generating wiremesh obj files
 - "c -- press "c" to remove the selected points
 - "1","2" -- press these to set the view angle respectively to top and bottom
 
-## Commands in normal mode
+## Normal mode
+### Commands in normal mode
 
 - :clear -- Remove all vertices
 
 - :submit -- Submit object file
 
-- sel -- Add index to selection
+- sel[index] -- Add index to selection
 
 - :cube -- Generate cube
 
@@ -47,7 +51,9 @@ Web page for generating wiremesh obj files
 
 - dz= -- Set deltaz
 
-- ./[file] -- Open file
+- ./[file] -- Open file(clear object)
+
+- ,,[file] -- Add file to current object
 
 - :xrot -- yanglev=rotationspeed
 
@@ -63,8 +69,14 @@ Web page for generating wiremesh obj files
 
 - :init -- Set initial conditions
 
-- :interact -- Set interact mode to interact
+- :m -- Set interact mode to manip
 
 - :circle -- Generate circunference
 
 - :showi -- Toggle show-index mode
+
+- :rnv -- Toggle render-normal-vectors mode
+
+- :rf -- Toggle render-faces mode
+
+- :re -- Toggle render-edges mode

@@ -1,7 +1,7 @@
 [
     {
         "name": ":clear",
-        "ex": "ctext = '';vertices = [];edges = [];normalv=[]",
+        "ex": "clear()",
         "desc":"Remove all vertices"
     },
     {
@@ -81,8 +81,14 @@
     {
         "name": "./[file]",
         "cond": "ctext.slice(0,2)=='./'",
-        "ex": "readfile('./assets/'+ctext.slice(2));ctext=''",
-        "desc":"Open file"
+        "ex": "setfile('./assets/'+ctext.slice(2),1);ctext=''",
+        "desc":"Open file(clear object)"
+    },
+    {
+        "name": ",,[file]",
+        "cond": "ctext.slice(0,2)==',,'",
+        "ex": "readfile('./assets/'+ctext.slice(2),1);ctext=''",
+        "desc":"Add file to current object"
     },
     {
         "name": ":xrot",
@@ -155,5 +161,11 @@
         "cond":"ctext==':rf'",
         "ex":"renderfaces*=-1;ctext=''",
         "desc":"Toggle render-faces mode"
+    },
+    {
+        "name":":re",
+        "cond":"ctext==':re'",
+        "ex":"renderedges*=-1;ctext=''",
+        "desc":"Toggle render-edges mode"
     }
 ]

@@ -22,6 +22,10 @@ var textlist = [];
 var vertices = [];
 var edges = [];
 var normalv = [];
+let xlangle = 0, ylangle = 0;
+let xlanglev = 2, ylanglev = 0;
+let xangle = 0, yangle = 0;
+let xanglev = 0,  yanglev = 0;
 // Interact-variables
 let addselect = [];
 var commandhist = [];
@@ -37,9 +41,9 @@ let intmode = "normal";
 let rendernormalv = -1;
 let renderfaces = -1;
 var drawv = 1;
+let renderedges = 1;
+let renderlnv = -1;
 let showind = -1;
-let xangle = 0; let yangle = 0;
-let xanglev = 0; let yanglev = 0;
 let rotationspeed = .5;
 let FOV = 60;
 let projd = 5;
@@ -66,12 +70,12 @@ function init() {
     }
     canvas.focus();
     addselect = [];
-    vertices = []; edges = [];
-    //readfile("./assets/cube.obj");
-    readfile("./assets/tcube.obj")
+    vertices = []; edges = []; normalv=[];
+    //readfile("./assets/cube.obj",0);
+    readfile("./assets/tcube.obj",1);
     //ccld(30,30,0,1);
     //ccldt(30, 30, 2, 1)
-    //readfile("./assets/cilinder.obj");
+    //readfile("./assets/cilinder.obj",1);
     //gensphere(1, 100, 24);
     projd = 5;
     xangle = 0;yangle = 0;
@@ -445,7 +449,7 @@ function download() {
     document.body.removeChild(element);
 }
 
-function read(text) {
+function read(text, makenormal) {
     let mode = null;
     let j = -1;
     let k = 0;
@@ -493,15 +497,23 @@ function read(text) {
             value += text[i];
         }
     }
-
-    makenormalv();
+    // not drawv
+    if(vertices.length>30) {
+        drawv=-1;
+    }
+    if(makenormal==1) {
+        makenormalv();
+    }
 }
-
-function readfile(path) {
+function setfile(path) {
+    clear();
+    readfile(path,1);
+}
+function readfile(path, makenormal) {
     try {
         fetch(path).then((res) => res.text()).then((text) => {
             //console.log(text);
-            read(text);
+            read(text,makenormal);
         }).catch((e) => 
             console.error(e)
         );
@@ -509,12 +521,18 @@ function readfile(path) {
         console.error(error);
     }
 }
+function clear() {
+    ctext = '';vertices = [];edges = [];normalv=[];edgemiddvert=[];
+}
 
 var projp = [];
 let vertexpsize = scale*.3;
-let lnv = [-1, 0, 0];
+let lnv = [1, 0, 0];
+let bhedge = [];
 function render() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.globalAlpha=1;
+    ctx.globalCompositeOperation="source-over";
     ctx.beginPath();
     ctx.fillStyle = "red";
     if(vertices!=structuredClone([]) && edges!=structuredClone([])){
@@ -523,18 +541,76 @@ function render() {
         } else {
             // Project
             projp = structuredClone([]);
+            bhedge = structuredClone([]);
             for(let i = 0; i < vertices.length; i++) {
                 const rotated = rotate(vertices[i], xangle, yangle);
                 let p = project(rotated);
                 // check if behind camera
-                if(p[2]>=0) {
-                    projp[i]=p;
+                if(p[2]<0) {
+                    projp[i]=null
                 } else {
-                    projp[i] = null;
+                    projp[i]=p;
+                }
+            }
+            // collision check
+            for(let j =0; j<1;j++) { // test 0
+                if(edges[j]!=null&&!projp.includes(null)) {
+                    //det maxx and minxx
+                    let mousepx = (mousex-canvas.width/2)/scale;
+                    let mousepy = (mousey-canvas.height/2)/scale;
+                    let xminindex = 0, xmaxindex= 0;
+                    let x0=projp[edges[j][0]][0];
+                    let x1=projp[edges[j][0]][0];
+                    for(let k = 1; k< edges[j].length; k++) {
+                        if(projp[edges[j][k]][0]<x0) {
+                            xminindex=k;
+                            x0=projp[edges[j][k]][0];
+                        }
+                        if(projp[edges[j][k]][0]>x1) {
+                            xmaxindex = k;
+                            x1=projp[edges[j][k]][0];
+                        }
+                    }
+                    let xotherindex;
+                    for(let k = 0; k<edges[j].length;k++) {
+                        if(xmaxindex!=k&&xminindex!=k) {
+                            xotherindex = k;
+                        }
+                    }
+                    let ymaxindex=xotherindex; let ymax=projp[edges[j][xotherindex]][1];
+                    let yminindex=xotherindex; let ymin=projp[edges[j][xotherindex]][1];
+                    for(let k = 0; k<edges[j].length;k++) {
+                        if(k!=xminindex&&projp[edges[j][k]][1]>ymax) {
+                            ymax=projp[edges[j][k]][1];
+                            ymaxindex=k;
+                        } else if(k!=xminindex&&projp[edges[j][k]][1]<ymin) {
+                            ymin=projp[edges[j][k]][1];
+                            yminindex=k;
+                        }
+                    }
+                    let p0 = projp[edges[j][xminindex]];
+                    let p1 = projp[edges[j][ymaxindex]];
+                    let p2 = projp[edges[j][yminindex]];
+                    //det y0, y1, y2
+                    let y0 = (mousepx-p1[0])*(p1[1]-p2[1])/(p1[0]-p2[0])+p2[1];
+                    let y1 = (mousepx-p2[0])*(p2[1]-p0[1])/(p2[0]-p0[0])+p0[1];
+                    let y2 = (mousepx-p1[0])*(p1[1]-p0[1])/(p1[0]-p0[0])+p0[1];
+                    if(mousepx>x0&&mousepx<x1) {
+                        if(mousepy<y2&&mousepy>y1&&mousepy>y0) {
+                            console.log("inside");
+                            break;
+                        }
+                    }
                 }
             }
             // behind check TODO
-            if(renderfaces==2) {
+            if(renderfaces==1) {
+                //normal direction check
+                for(let i = 0; i < edges.length; i++) {
+                    if(Math.acos(Number(rotate(normalv[i],xangle,yangle)[2])*-1)>(Math.PI/2)) {
+                        bhedge.push(i);
+                    }
+                }
                 for(let i = 0; i< vertices.length; i++) {
                     let v1 = rotate(vertices[i],xangle,yangle);
                     let vx = v1[0];
@@ -560,45 +636,11 @@ function render() {
                         let ry = vy-py;
                         let rz = vz-pz;
                         let d = (rx*normalv[j][0]+ry*normalv[j][1]+rz*normalv[j][2]);
-                        if(d<0) {
-                            //collision check
-                            projp[i]=null;
+                        if(d<0&&projp[i]!=[]&&projp[edges[j]]!=[]&&projp[i]!=null&&projp[edges[j]]!=null) {
+                            projp[i]=null
                             break;
                         }
-                        //// collision check
-                        ////det maxx and minxx
-                        //let xminindex = 0, xmaxindex= 0;
-                        //let x0=projp[edges[j][0]][0];
-                        //let x1=projp[edges[j][0]][0];
-                        //for(let k = 1; k< edges[j].length; k++) {
-                        //    if(projp[edges[j][k]][0]<x0) {
-                        //        xminindex=k;
-                        //        x0=projp[edges[j][k]][0];
-                        //    }
-                        //    if(projp[edges[j][k]][0]>x1) {
-                        //        xmaxindex = k;
-                        //        x1=projp[edges[j][k]][0];
-                        //    }
-                        //}
-                        //let otherindex;
-                        //for(let k = 0; k<edges[j].length;k++) {
-                        //    if(xmaxindex!=k&&xminindex!=k) {
-                        //        otherindex = k;
-                        //    }
-                        //}
-                        //let p0 = projp[edges[j][xminindex]];
-                        //let p1 = projp[edges[j][otherindex]];
-                        //let p2 = projp[edges[j][xmaxindex]];
-                        ////det y0, y1, y2
-                        //let y0 = (projp[i][0]-p1[0])*(p1[1]-p2[1])/(p1[0]-p2[0])+p2[1];
-                        //let y1 = (projp[i][0]-p2[0])*(p2[1]-p0[1])/(p2[0]-p0[0])+p0[1];
-                        //let y2 = (projp[i][0]-p1[0])*(p1[1]-p0[1])/(p1[0]-p0[0])+p0[1];
-                        //if(projp[i][0]>x0&&projp[i][0]<x1) {
-                        //    if(projp[i][1]<y2&&projp[i][1]>y1&&projp[i][1]>y0) {
-                        //        projp[i]=null;
-                        //        break;
-                        //    }
-                        //}
+                        
                     }
                 }
             }
@@ -606,19 +648,19 @@ function render() {
             if(renderfaces==1&&normalv.length!=0) {
                 // Render faces
                 for(let i = 0; i< edges.length; i++) {
-                    if(normalv[i]!=null) {
+                    if(normalv[i]!=null && !bhedge.includes(i)) {
                         let op = 1;
                         let opx = lnv[0]*normalv[i][0];
                         let opy = lnv[1]*normalv[i][1];
                         let opz = lnv[2]*normalv[i][2];
                         let theta = Math.acos(opx+opy+opz);
-                        op = theta/Math.PI;
+                        //op = theta/Math.PI;
 
                         // Render face
                         var path = new Path2D();
                         ctx.beginPath();
                         ctx.lineWidth=1;
-                        ctx.fillStyle="rgb(255, 0, 0,"+op+")"; // 255, 100, 100
+                        ctx.fillStyle="rgb("+255*op+", 0, 0)"; // 255, 100, 100
                         for(let j = 0; j < edges[i].length;j++) {
                             if(j==0&&projp[edges[i][j]]!=null) {
                                 path.moveTo(canvas.width/2+scale*projp[edges[i][j]][0], canvas.height/2+scale*projp[edges[i][j]][1]);
@@ -630,13 +672,16 @@ function render() {
                     }
                 }
                 // render lnv
-                let projlnv = project(rotate(lnv, xangle, yangle));
-                ctx.beginPath();
-                ctx.strokeStyle="rgb(255, 200, 100)";
-                ctx.lineWidth=6;
-                ctx.moveTo(canvas.width/2,canvas.height/2);
-                ctx.lineTo(canvas.width/2+scale*projlnv[0], canvas.height/2+scale*projlnv[1]);
-                ctx.stroke();
+                if(renderlnv==1) {
+                    let projlnv = project(rotate([lnv[0], lnv[1], lnv[2]], xangle, yangle));
+                    projlnvf = project([0,0,0]);
+                    ctx.beginPath();
+                    ctx.strokeStyle="rgb(255, 200, 100)";
+                    ctx.lineWidth=6;
+                    ctx.moveTo(canvas.width/2+scale*projlnvf[0], canvas.height/2+scale*projlnvf[1]);
+                    ctx.lineTo(canvas.width/2+scale*projlnv[0], canvas.height/2+scale*projlnv[1]);
+                    ctx.stroke();
+                }
             }
             ctx.lineWidth=1;
 
@@ -650,25 +695,27 @@ function render() {
             for(let i = 0; i < edges.length; i++) {
                 for(let j = 0; j <edges[i].length;j++) {
                     // draw edges
-                    if(j+1<edges[i].length) {
-                        const p1 = projp[edges[i][j]];
-                        const p2 = projp[edges[i][j+1]];
-                        if(p1!=null && p2!=null) {
-                            ctx.beginPath();
-                            ctx.strokeStyle = rendertheme;
-                            ctx.moveTo(canvas.width/2+scale*p1[0], canvas.height/2+scale*p1[1]);
-                            ctx.lineTo(canvas.width/2+scale*p2[0], canvas.height/2+scale*p2[1]);
-                            ctx.stroke();
-                        }
-                    } else if(j+1==edges[i].length){
-                        const p1 = projp[edges[i][j]];
-                        const p2 = projp[edges[i][0]];
-                        if(p1!=null && p2!=null) {
-                            ctx.beginPath();
-                            ctx.strokeStyle = rendertheme;
-                            ctx.moveTo(canvas.width/2+scale*p1[0], canvas.height/2+scale*p1[1]);
-                            ctx.lineTo(canvas.width/2+scale*p2[0], canvas.height/2+scale*p2[1]);
-                            ctx.stroke();
+                    if(renderedges==1) {
+                        if(j+1<edges[i].length) {
+                            const p1 = projp[edges[i][j]];
+                            const p2 = projp[edges[i][j+1]];
+                            if(p1!=null && p2!=null) {
+                                ctx.beginPath();
+                                ctx.strokeStyle = rendertheme;
+                                ctx.moveTo(canvas.width/2+scale*p1[0], canvas.height/2+scale*p1[1]);
+                                ctx.lineTo(canvas.width/2+scale*p2[0], canvas.height/2+scale*p2[1]);
+                                ctx.stroke();
+                            }
+                        } else if(j+1==edges[i].length){
+                            const p1 = projp[edges[i][j]];
+                            const p2 = projp[edges[i][0]];
+                            if(p1!=null && p2!=null) {
+                                ctx.beginPath();
+                                ctx.strokeStyle = rendertheme;
+                                ctx.moveTo(canvas.width/2+scale*p1[0], canvas.height/2+scale*p1[1]);
+                                ctx.lineTo(canvas.width/2+scale*p2[0], canvas.height/2+scale*p2[1]);
+                                ctx.stroke();
+                            }
                         }
                     }
                     // render normal vector
@@ -708,15 +755,15 @@ function render() {
                         iscaught=1;
                     }
                 }
-                if(iscaught==0) {
-                    ctx.fillStyle = "red";
-                } else if(iscaught==1) {
+                if(iscaught==1||renderfaces==1) {
                     ctx.fillStyle="blue";
-                }
+                } else if(iscaught==0) {
+                    ctx.fillStyle = "red";
+                } 
                 
                 const p1 = projp[i];
                 if(p1!=null) {
-                    if((drawv==1 && renderfaces==-1)||addselect.includes(i)) {
+                    if((drawv==1 && renderfaces==-1)||iscaught==1) {
                         ctx.fillRect(canvas.width/2+scale*p1[0] - vertexpsize/2, canvas.height/2+scale*p1[1] - vertexpsize/2, vertexpsize, vertexpsize);
                     }
                     // render text displaying the index of a vertex above said vertex
@@ -764,6 +811,11 @@ function mainloop(currentTime) {
     
     update(deltaTime);
     render();
+    //try {
+    //    render();
+    //} catch(error) {
+    //    console.log(error);
+    //}
 
     requestAnimationFrame(mainloop);
 }
@@ -775,6 +827,10 @@ function update(deltaTime) {
     xangle%=Math.PI*2;
     yangle%=Math.PI*2;
     textout = "";
+
+    xlangle+=xlanglev*deltaTime;
+    ylangle+=ylanglev*deltaTime;
+    lnv = rotate([0,0,-1],xlangle,ylangle);
 
     // manually rotate object
     if(mousebutton==1 && moused==1) {
@@ -857,6 +913,7 @@ function update(deltaTime) {
                     vertices[addselect[i]][1] = Number(vertices[addselect[i]][1])+Number(deltacaught[1]);
                     vertices[addselect[i]][2] = Number(vertices[addselect[i]][2])+Number(deltacaught[2]);
                 }
+                makenormalv();
             }
         }
         deltacaught=null;
@@ -1003,6 +1060,7 @@ let edgemiddvert = [];
 function makenormalv() { //TODO fix polarity
     // p0- edges[0] p1- edges[1] p2- edges[2]
     normalv=[];
+    edgemiddvert=[];
     for(let i = 0; i< edges.length; i++) {
         let p = [0, 0, 0];
         for(let j = 0; j< edges[i].length;j++) {
@@ -1048,10 +1106,13 @@ function makenormalv() { //TODO fix polarity
         }
         if(newmidlen<midlen) {
             for(let j = 0; j<normalv[i].length;j++) {
-                normalv[i][j]*=-1;
+                if(normalv[i][j]!=0) {
+                    normalv[i][j]*=-1;
+                }
             }
         }
     }
+    console.log("normalv: ",normalv)
 }
 
 requestAnimationFrame((timestamp) => {
