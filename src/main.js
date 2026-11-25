@@ -24,6 +24,7 @@ var vertices = [];
 var edges = [];
 var normalv = [];
 let edgemiddvert = [];
+let rotationspeed = .5;
 let xlangle = 0, ylangle = 0;
 let xlanglev = .7, ylanglev = 0;
 let xangle = 0, yangle = 0;
@@ -41,13 +42,12 @@ let deltacaught = null;
 let theme = 0;
 let intmode = "normal";
 let rendernormalv = -1;
-let renderfaces = -1;
-let renderlight = 1;
+let renderfaces = 1;
+let renderlight = -1;
 var drawv = 1;
-let renderedges = 1;
+let renderedges = -1;
 let renderlightvector = -1;
 let showind = -1;
-let rotationspeed = .5;
 let FOV = 60;
 let projd = 5;
 const projscale = 600;
@@ -81,7 +81,7 @@ function init() {
     //gensphere(1, 100, 24);
     projd = 5;
     xangle = 0;yangle = 0;
-    xanglev = 0; yanglev = 0;
+    xanglev = 0; yanglev = rotationspeed;
     makenormalv();
 }
 init();
@@ -618,44 +618,17 @@ function render() {
             }
             // behind check TODO
             if(renderfaces==1) {
-                //normal direction check
                 for(let i = 0; i < edges.length; i++) {
-                    if(Math.acos(Number(rotate(normalv[i],xangle,yangle)[2])*-1)>=(Math.PI/2)) {
+                    let projmidd = project(rotate(edgemiddvert[i],xangle,yangle));
+                    let a = [projmidd[0]/projscale/FOV, projmidd[1]/projscale/FOV, projmidd[2]];
+                    let alen=a[0]*a[0]+a[1]*a[1]+a[2]*a[2];
+                    let rotnv = rotate(normalv[i],xangle,yangle);
+                    let rotnvlen = rotnv[0]*rotnv[0]+rotnv[1]*rotnv[1]+rotnv[2]*rotnv[2];
+                    anproduct = (a[0]*rotnv[0]+a[1]*rotnv[1]+a[2]*rotnv[2])/(rotnvlen*alen);
+                    if(Math.acos(anproduct)<=(Math.PI/2)) {
                         bhedge.push(i);
                     }
                 }
-                //for(let i = 0; i< vertices.length; i++) {
-                //    let v1 = rotate(vertices[i],xangle,yangle);
-                //    let vx = v1[0];
-                //    let vy = v1[1];
-                //    let vz = v1[2];
-                //    for(let j = 0; j <edges.length; j++) {
-                //        let exitedg = 0;
-                //        //face of point check
-                //        for(let k = 0; k<edges[j].length;k++) {
-                //            if(edges[j][k]==i) {
-                //                exitedg=1;
-                //                break;
-                //            }
-                //        }
-                //        if(exitedg==1) {
-                //            break;
-                //        }
-                //        let projmidd = rotate(edgemiddvert[j], xangle,yangle);
-                //        let px = projmidd[0];
-                //        let py = projmidd[1];
-                //        let pz = projmidd[2];
-                //        let rx = vx-px;
-                //        let ry = vy-py;
-                //        let rz = vz-pz;
-                //        let d = (rx*normalv[j][0]+ry*normalv[j][1]+rz*normalv[j][2]);
-                //        if(d<0&&projp[i]!=[]&&projp[edges[j]]!=[]&&projp[i]!=null&&projp[edges[j]]!=null) {
-                //            projp[i]=null
-                //            break;
-                //        }
-                //        
-                //    }
-                //}
             }
             // Render with faces
             if(renderfaces==1&&normalv.length!=0) {
@@ -757,7 +730,6 @@ function render() {
                         }
                     }
                 }
-                //console.log("i="+i+" p1: "+p1+"; p2: "+p2);
             }
             // Draw vertices
             for(let i = 0; i < projp.length; i++) {
@@ -1055,6 +1027,15 @@ function rotate(p, anglex, angley) {
     rotated[1] = y2;
     rotated[2] = z2;
     return rotated;
+}
+function addv(v1, v2) {
+    let v3=[];
+    if(v1.length==v2.length) {
+        for(let i = 0; i < v1.length; i++) {
+            v3[i]=Number(v1[i])+Number(v2[i]);
+        }
+    }
+    return v3;
 }
 function makenormalv() { //ccw is frontfaced
     // p0- edges[0] p1- edges[1] p2- edges[2]
